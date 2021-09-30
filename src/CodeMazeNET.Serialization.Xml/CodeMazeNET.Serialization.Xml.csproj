@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.255</Version>
+    <Authors>Duy Khanh</Authors>
+    <Product>Serialization Xml</Product>
+    <Description>.NET XML Serialization Helper</Description>
+    <Copyright>CodeMaze.NET</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>.NET XML Serialization, XML Serialization</PackageTags>
+    <PackageIcon>Logo.png</PackageIcon>
+    <PackageIconUrl />
+    <ApplicationIcon>Logo.ico</ApplicationIcon>
+    <PackageProjectUrl>https://codemaze.net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/khanhnd157/SerializationXml</RepositoryUrl>
+    <RepositoryType>C#</RepositoryType>
+    <PackageReleaseNotes>- Fixed some bug's</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Assets\Logo.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
