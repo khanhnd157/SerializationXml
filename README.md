@@ -1,4 +1,8 @@
 # MazeNET.SerializationXml
+
+[![.NET](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 .NET XML Serialization Helper - Clean Architecture
 
 ## ✨ Features
