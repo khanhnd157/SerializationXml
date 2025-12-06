@@ -1,14 +1,106 @@
-﻿using System;
+using System;
 using System.IO;
-using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+using MazeNET.SerializationXml.Core.Interfaces;
+using MazeNET.SerializationXml.Infrastructure.Extensions;
 
-namespace CodeMazeNET.Serialization.Xml
+namespace MazeNET.SerializationXml.Infrastructure.Converters
 {
-    public static class XmlConverter
+    /// <summary>
+    /// Implementation of XML file operations
+    /// </summary>
+    public class XmlFileOperationsService : IXmlFileOperations
     {
-        public static bool SaveToFile<T>(string fullPath, XmlDocument document)
+#if NET9_0_OR_GREATER
+        /// <inheritdoc/>
+        public bool SaveToFile<T>(string fullPath, XmlDocument document)
+        {
+            ArgumentNullException.ThrowIfNull(fullPath);
+            ArgumentNullException.ThrowIfNull(document);
+
+            using (TextWriter writeFileStream = new StreamWriter(fullPath))
+            {
+                XmlSerializer serializerObj = new XmlSerializer(typeof(T));
+                serializerObj.Serialize(writeFileStream, document.ConvertToString());
+                writeFileStream.Dispose();
+
+                return true;
+            }
+        }
+
+        /// <inheritdoc/>
+        public bool SaveToFile<T>(string fullPath, T objectToSerialize)
+        {
+            ArgumentNullException.ThrowIfNull(fullPath);
+            ArgumentNullException.ThrowIfNull(objectToSerialize);
+
+            using (TextWriter writeFileStream = new StreamWriter(fullPath))
+            {
+                XmlSerializer serializerObj = new XmlSerializer(typeof(T));
+                serializerObj.Serialize(writeFileStream, objectToSerialize);
+                writeFileStream.Close();
+                return true;
+            }
+        }
+
+        /// <inheritdoc/>
+        public T LoadFromFile<T>(string fullPath)
+        {
+            ArgumentNullException.ThrowIfNull(fullPath);
+
+            FileStream? readFileStream = null;
+            try
+            {
+                using (readFileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    T loadedObj = default(T)!;
+                    XmlSerializer serializerObj = new XmlSerializer(typeof(T));
+
+                    byte[] buffer = ReadByteArrayFormStream(readFileStream);
+
+                    readFileStream?.Close();
+
+                    Stream stream = new MemoryStream(buffer);
+
+                    loadedObj = (T)serializerObj.Deserialize(stream)!;
+
+                    return loadedObj;
+                }
+            }
+            finally
+            {
+                readFileStream?.Close();
+            }
+        }
+
+        /// <inheritdoc/>
+        public XmlDocument LoadXml(string path)
+        {
+            ArgumentNullException.ThrowIfNull(path);
+
+            FileStream? readFileStream = null;
+            try
+            {
+                if (!File.Exists(path))
+                    throw new FileNotFoundException("File not found: " + path);
+
+                using (readFileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    XmlDocument xmlDoc = new XmlDocument();
+                    xmlDoc.Load(readFileStream);
+
+                    return xmlDoc;
+                }
+            }
+            finally
+            {
+                readFileStream?.Close();
+            }
+        }
+#else
+        /// <inheritdoc/>
+        public bool SaveToFile<T>(string fullPath, XmlDocument document)
         {
             try
             {
@@ -27,7 +119,8 @@ namespace CodeMazeNET.Serialization.Xml
             }
         }
 
-        public static bool SaveToFile<T>(string fullPath, T objectToSerialize)
+        /// <inheritdoc/>
+        public bool SaveToFile<T>(string fullPath, T objectToSerialize)
         {
             try
             {
@@ -45,7 +138,8 @@ namespace CodeMazeNET.Serialization.Xml
             }
         }
 
-        public static T FileToObject<T>(string fullPath)
+        /// <inheritdoc/>
+        public T LoadFromFile<T>(string fullPath)
         {
             FileStream readFileStream = null;
             try
@@ -76,46 +170,8 @@ namespace CodeMazeNET.Serialization.Xml
             }
         }
 
-        public static XmlDocument SerializeObject<T>(T dataObject, Func<XmlOptionsBuilder, XmlOptionsBuilder> builder)
-        {
-            if (dataObject == null) dataObject = default(T);
-
-            try
-            {
-                using (StringWriter stringWriter = new System.IO.StringWriter())
-                {
-                    var serializer = new XmlSerializer(typeof(T));
-                    serializer.Serialize(stringWriter, dataObject);
-
-                    var dataSerialize = stringWriter?.ToString() ?? string.Empty;
-
-                    if (string.IsNullOrEmpty(dataSerialize)) return new XmlDocument();
-
-                    XmlDocument xmldoc = new XmlDocument();
-                    xmldoc.LoadXml(dataSerialize);
-
-                    return xmldoc.Builder(builder);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        public static XmlDocument SerializeObject<T>(T dataObject)
-        {
-            return SerializeObject<T>(dataObject, builder => builder
-                .AddDeclaration(new XmlDeclarationOptions
-                {
-                    Encoding = Encoding.UTF8,
-                    Standalone = true,
-                    Version = "1.0"
-                })
-                .RemoveSchema());
-        }
-
-        public static XmlDocument LoadXml(string path)
+        /// <inheritdoc/>
+        public XmlDocument LoadXml(string path)
         {
             FileStream readFileStream = null;
             try
@@ -140,49 +196,7 @@ namespace CodeMazeNET.Serialization.Xml
                 readFileStream?.Close();
             }
         }
-
-        public static T DeserializeObject<T>(string dataxml)
-             where T : new()
-        {
-            if (string.IsNullOrEmpty(dataxml))
-            {
-                return new T();
-            }
-            try
-            {
-                using (var stringReader = new StringReader(dataxml))
-                {
-                    var serializer = new XmlSerializer(typeof(T));
-                    return (T)serializer.Deserialize(stringReader);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new T();
-            }
-        }
-
-        public static T DeserializeObject<T>(XmlDocument xmlDoc)
-            where T : new()
-        {
-            try
-            {
-                if (xmlDoc == null)
-                    return default(T);
-
-                var data = xmlDoc.ConvertToString();
-
-                using (var stringReader = new StringReader(data))
-                {
-                    var serializer = new XmlSerializer(typeof(T));
-                    return (T)serializer.Deserialize(stringReader);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new T();
-            }
-        }
+#endif
 
         private static byte[] ReadByteArrayFormStream(Stream stream)
         {
@@ -236,5 +250,5 @@ namespace CodeMazeNET.Serialization.Xml
             }
         }
     }
-
 }
+
