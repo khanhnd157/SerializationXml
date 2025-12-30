@@ -13,8 +13,8 @@
 ## ✨ Features
 - ✅ Clean Architecture design pattern
 - ✅ Interface-based abstractions
-- ✅ Multi-targeting support: .NET Framework 4.8, .NET 9.0, .NET 10.0
-- ✅ Nullable reference types support for .NET 9+
+- ✅ Multi-targeting support: `.NET Standard 2.0`, `.NET Standard 2.1`, `.NET Framework 4.8`, `.NET 8.0`, `.NET 9.0`, `.NET 10.0`
+- ✅ Nullable reference types support for .NET 8+
 - ✅ Comprehensive XML documentation
 - ✅ Backward compatible API
 
