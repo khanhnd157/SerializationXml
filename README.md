@@ -1,6 +1,11 @@
 # MazeNET.SerializationXml
 
-[![.NET](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET Standard-2.0](https://img.shields.io/badge/.NET%20Standard-2.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET Standard-2.1](https://img.shields.io/badge/.NET%20Standard-2.1-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET 8.0](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+[![.NET 9.0](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+[![.NET 10.0](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+[![.NET 4.8](https://img.shields.io/badge/.NET-4.8-purple.svg)](https://dotnet.microsoft.com/en-us/download/dotnet-framework/net48)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 .NET XML Serialization Helper - Clean Architecture
