@@ -249,4 +249,4 @@ var deserializedInvoice = XmlConverter.DeserializeObject<Invoice>(xmlString);
 5. **Dependency Inversion** - High-level modules don't depend on low-level modules
 
 # Thanks
-### Thanks for use, if it's helpful for you please send me 1 star! ⭐
+### Thanks for use
