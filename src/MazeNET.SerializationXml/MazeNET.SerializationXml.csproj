@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0;net9.0;net10.0;netstandard2.0;netstandard2.1</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.0.0</Version>
+    <Version>2.0.2</Version>
     <Authors>Duy Khanh</Authors>
     <Product>MazeNET.SerializationXml</Product>
     <Description>.NET XML Serialization Helper - Clean Architecture with multi-targeting support for .NET Framework 4.8, .NET 9, and .NET 10</Description>
-    <Copyright>Maze.NET</Copyright>
+    <Copyright>Duy Khanh</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>.NET XML Serialization, XML Serialization, .NET Framework 4.8, .NET 9, .NET 10, Clean Architecture</PackageTags>
     <PackageIcon>Logo.png</PackageIcon>
@@ -16,12 +16,15 @@
     <PackageProjectUrl>https://codemaze.net</PackageProjectUrl>
     <RepositoryUrl>https://github.com/khanhnd157/SerializationXml</RepositoryUrl>
     <RepositoryType>C#</RepositoryType>
-    <PackageReleaseNotes>v2.0.0 - Restructured with Clean Architecture, new namespace MazeNET.SerializationXml, added multi-targeting support for .NET Framework 4.8, .NET 9, and .NET 10</PackageReleaseNotes>
+    <PackageReleaseNotes>v2.0.2 - Restructured with Clean Architecture, new namespace MazeNET.SerializationXml, added multi-targeting support for .NET Framework 4.8, .NET 9, and .NET 10</PackageReleaseNotes>
     <LangVersion>latest</LangVersion>
     <RootNamespace>MazeNET.SerializationXml</RootNamespace>
     <AssemblyName>MazeNET.SerializationXml</AssemblyName>
     <PackageId>MazeNET.SerializationXml</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyVersion>2.0.2.125</AssemblyVersion>
+    <FileVersion>2.0.2.125</FileVersion>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <!-- .NET Framework 4.8 specific configuration -->
@@ -35,8 +38,36 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.1|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="Assets\Logo.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
