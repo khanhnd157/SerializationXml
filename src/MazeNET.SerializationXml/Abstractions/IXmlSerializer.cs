@@ -2,9 +2,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using MazeNET.SerializationXml.Core.Options;
+using MazeNET.SerializationXml.Options;
 
-namespace MazeNET.SerializationXml.Core.Interfaces
+namespace MazeNET.SerializationXml.Abstractions
 {
     /// <summary>
     /// Interface for XML serialization operations

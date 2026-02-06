@@ -22,9 +22,10 @@
 - XML serialization and deserialization (object ↔ `XmlDocument` ↔ string ↔ file)
 - XML-to-JSON conversion with configurable options (zero external dependencies)
 - XML-to-Object mapping (`ConvertTo<T>`) — unmatched properties remain null/default
+- Typed JSON conversion (`XmlToJson<T>`) — XML → T → JSON with only T's properties
 - Fluent builder for XML output options (root element, declaration, schema, CDATA)
 - Async methods with `CancellationToken` support for all file operations
-- Extension methods on `XmlDocument` (`.ConvertToString()`, `.Builder()`, `.ToJson()`, `.ToObject<T>()`)
+- Extension methods on `XmlDocument` (`.ConvertToString()`, `.Builder()`, `.ToJson()`, `.ToJson<T>()`, `.ToObject<T>()`)
 - `IServiceCollection.AddSerializationXml()` for dependency injection
 - Custom `XmlSerializationException` with `TargetType` and `Operation` context
 - Nullable reference types enabled
@@ -68,7 +69,7 @@ Install-Package MazeNET.SerializationXml
 
 ```csharp
 using MazeNET.SerializationXml;
-using MazeNET.SerializationXml.Core.Options;
+using MazeNET.SerializationXml.Options;
 
 public class Invoice
 {
@@ -189,6 +190,12 @@ string json = XmlConverter.XmlToJson(xmlDoc, new XmlToJsonOptions
     CDataNodeKey = "#cdata-section",
     IncludeNamespaces = false
 });
+
+// Typed JSON — XML → map to T → JSON (only T's properties, unmatched = null)
+string json = XmlConverter.XmlToJson<InvoiceDto>(xmlString);
+string json = XmlConverter.XmlToJson<InvoiceDto>(xmlDocument);
+string json = XmlConverter.XmlFileToJson<InvoiceDto>("data.xml");
+string json = xmlDoc.ToJson<InvoiceDto>(indent: true);
 ```
 
 ### XML to Typed Object
@@ -232,15 +239,21 @@ public class MyService
     private readonly IXmlSerializer _serializer;
     private readonly IXmlFileOperations _fileOps;
     private readonly IXmlToJsonConverter _jsonConverter;
+    private readonly IXmlToObjectMapper _objectMapper;
+    private readonly IXmlTypedJsonConverter _typedJsonConverter;
 
     public MyService(
         IXmlSerializer serializer,
         IXmlFileOperations fileOps,
-        IXmlToJsonConverter jsonConverter)
+        IXmlToJsonConverter jsonConverter,
+        IXmlToObjectMapper objectMapper,
+        IXmlTypedJsonConverter typedJsonConverter)
     {
         _serializer = serializer;
         _fileOps = fileOps;
         _jsonConverter = jsonConverter;
+        _objectMapper = objectMapper;
+        _typedJsonConverter = typedJsonConverter;
     }
 }
 ```
@@ -312,14 +325,17 @@ This is a pure XML utility library. No database or migration is required.
 **Migration from v1.x (CodeMazeNET.Serialization.Xml):**
 
 ```csharp
-// v1.x namespace
+// v1.x
 using CodeMazeNET.Serialization.Xml;
 
-// v2.x namespace
+// v2.x
 using MazeNET.SerializationXml;
+using MazeNET.SerializationXml.Options;           // XmlOptionsBuilder, XmlToJsonOptions, etc.
+using MazeNET.SerializationXml.Abstractions;      // IXmlSerializer, IXmlToJsonConverter, etc.
+using MazeNET.SerializationXml.Exceptions;        // XmlSerializationException
 ```
 
-The public API remains backward compatible. Only the namespace changed.
+The public API remains backward compatible. Namespaces changed from `Core.*` / `Infrastructure.*` to flat structure.
 
 ## J. Troubleshooting
 
@@ -350,14 +366,16 @@ dotnet build
 
 ```
 MazeNET.SerializationXml/
-├── Core/
-│   ├── Exceptions/        # XmlSerializationException
-│   ├── Interfaces/        # IXmlSerializer, IXmlFileOperations, IXmlToJsonConverter
-│   └── Options/           # XmlOptions, XmlDeclarationOptions, XmlOptionsBuilder, XmlToJsonOptions
-├── Infrastructure/
-│   ├── Converters/        # XmlSerializerService, XmlFileOperationsService, XmlToJsonConverterService
-│   │   └── Internal/      # XmlJsonWriter, XmlToObjectMapper
-│   └── Extensions/        # XmlExtensions, ServiceCollectionExtensions
+├── Abstractions/          # IXmlSerializer, IXmlFileOperations, IXmlToJsonConverter,
+│                          # IXmlToObjectMapper, IXmlTypedJsonConverter
+├── Exceptions/            # XmlSerializationException
+├── Options/               # XmlOptions, XmlOptionsBuilder, XmlDeclarationOptions, XmlToJsonOptions
+├── Services/              # XmlSerializerService, XmlFileOperationsService,
+│                          # XmlToJsonConverterService, XmlToObjectMapperService,
+│                          # XmlTypedJsonConverterService
+├── Internal/              # XmlJsonWriter, ObjectToJsonWriter, XmlToObjectMapper
+├── Extensions/            # XmlDocumentExtensions, ServiceCollectionExtensions
+├── Assets/                # Logo.ico, Logo.png
 └── XmlConverter.cs        # Static facade
 ```
 

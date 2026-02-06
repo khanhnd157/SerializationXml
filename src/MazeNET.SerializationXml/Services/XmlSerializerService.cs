@@ -5,12 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
-using MazeNET.SerializationXml.Core.Exceptions;
-using MazeNET.SerializationXml.Core.Interfaces;
-using MazeNET.SerializationXml.Core.Options;
-using MazeNET.SerializationXml.Infrastructure.Extensions;
+using MazeNET.SerializationXml.Abstractions;
+using MazeNET.SerializationXml.Exceptions;
+using MazeNET.SerializationXml.Options;
 
-namespace MazeNET.SerializationXml.Infrastructure.Converters
+namespace MazeNET.SerializationXml.Services
 {
     /// <summary>
     /// Implementation of XML serializer

@@ -1,5 +1,5 @@
-using MazeNET.SerializationXml.Core.Interfaces;
-using MazeNET.SerializationXml.Infrastructure.Converters;
+using MazeNET.SerializationXml.Abstractions;
+using MazeNET.SerializationXml.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MazeNET.SerializationXml
@@ -10,13 +10,15 @@ namespace MazeNET.SerializationXml
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Registers IXmlSerializer, IXmlFileOperations, and IXmlToJsonConverter as singleton services
+        /// Registers all XML serialization services as singletons
         /// </summary>
         public static IServiceCollection AddSerializationXml(this IServiceCollection services)
         {
             services.AddSingleton<IXmlSerializer, XmlSerializerService>();
             services.AddSingleton<IXmlFileOperations, XmlFileOperationsService>();
             services.AddSingleton<IXmlToJsonConverter, XmlToJsonConverterService>();
+            services.AddSingleton<IXmlToObjectMapper, XmlToObjectMapperService>();
+            services.AddSingleton<IXmlTypedJsonConverter, XmlTypedJsonConverterService>();
             return services;
         }
     }

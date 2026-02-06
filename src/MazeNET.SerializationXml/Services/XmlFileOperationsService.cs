@@ -4,10 +4,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
-using MazeNET.SerializationXml.Core.Exceptions;
-using MazeNET.SerializationXml.Core.Interfaces;
+using MazeNET.SerializationXml.Abstractions;
+using MazeNET.SerializationXml.Exceptions;
 
-namespace MazeNET.SerializationXml.Infrastructure.Converters
+namespace MazeNET.SerializationXml.Services
 {
     /// <summary>
     /// Implementation of XML file operations

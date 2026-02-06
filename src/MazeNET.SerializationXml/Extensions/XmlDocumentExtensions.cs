@@ -2,16 +2,20 @@ using System;
 using System.IO;
 using System.Text;
 using System.Xml;
-using MazeNET.SerializationXml.Core.Options;
-using MazeNET.SerializationXml.Infrastructure.Converters;
+using MazeNET.SerializationXml.Options;
+using MazeNET.SerializationXml.Services;
 
-namespace MazeNET.SerializationXml.Infrastructure.Extensions
+namespace MazeNET.SerializationXml
 {
     /// <summary>
     /// Extension methods for XmlDocument
     /// </summary>
-    public static class XmlExtensions
+    public static class XmlDocumentExtensions
     {
+        private static readonly XmlToJsonConverterService _jsonConverter = new XmlToJsonConverterService();
+        private static readonly XmlToObjectMapperService _objectMapper = new XmlToObjectMapperService();
+        private static readonly XmlTypedJsonConverterService _typedJsonConverter = new XmlTypedJsonConverterService();
+
         /// <summary>
         /// Convert XmlDocument to string
         /// </summary>
@@ -108,8 +112,6 @@ namespace MazeNET.SerializationXml.Infrastructure.Extensions
             return xmldocResult;
         }
 
-        private static readonly XmlToJsonConverterService _jsonConverter = new XmlToJsonConverterService();
-
         /// <summary>
         /// Convert XmlDocument to JSON string with default options
         /// </summary>
@@ -131,7 +133,15 @@ namespace MazeNET.SerializationXml.Infrastructure.Extensions
         /// </summary>
         public static T ToObject<T>(this XmlDocument document) where T : new()
         {
-            return _jsonConverter.ConvertTo<T>(document);
+            return _objectMapper.MapTo<T>(document);
+        }
+
+        /// <summary>
+        /// Convert XmlDocument to JSON shaped by type T. Unmatched properties are null.
+        /// </summary>
+        public static string ToJson<T>(this XmlDocument document, bool indent = true) where T : new()
+        {
+            return _typedJsonConverter.ConvertToJson<T>(document, indent);
         }
     }
 }

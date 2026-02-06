@@ -1,7 +1,7 @@
 using System;
 using System.Xml;
 
-namespace MazeNET.SerializationXml.Core.Options
+namespace MazeNET.SerializationXml.Options
 {
     /// <summary>
     /// Builder for XML options

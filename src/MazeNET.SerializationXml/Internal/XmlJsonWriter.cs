@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-using MazeNET.SerializationXml.Core.Options;
+using MazeNET.SerializationXml.Options;
 
-namespace MazeNET.SerializationXml.Infrastructure.Converters.Internal
+namespace MazeNET.SerializationXml.Internal
 {
     /// <summary>
     /// Internal helper to convert XML DOM to JSON string without external dependencies
