@@ -7,6 +7,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using MazeNET.SerializationXml.Abstractions;
 using MazeNET.SerializationXml.Exceptions;
+using MazeNET.SerializationXml.Internal;
 using MazeNET.SerializationXml.Options;
 
 namespace MazeNET.SerializationXml.Services
@@ -30,9 +31,9 @@ namespace MazeNET.SerializationXml.Services
 
                     var dataSerialize = stringWriter.ToString();
 
-                    if (string.IsNullOrEmpty(dataSerialize)) return new XmlDocument();
+                    if (string.IsNullOrEmpty(dataSerialize)) return SafeXmlFactory.CreateDocument();
 
-                    var xmldoc = new XmlDocument();
+                    var xmldoc = SafeXmlFactory.CreateDocument();
                     xmldoc.LoadXml(dataSerialize);
 
                     return xmldoc.Builder(builder);

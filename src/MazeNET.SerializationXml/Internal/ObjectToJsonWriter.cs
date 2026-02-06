@@ -8,6 +8,7 @@ namespace MazeNET.SerializationXml.Internal
 {
     internal sealed class ObjectToJsonWriter
     {
+        private const int MaxDepth = 64;
         private readonly StringBuilder _sb;
         private readonly bool _indent;
         private readonly string _indentChars;
@@ -100,6 +101,9 @@ namespace MazeNET.SerializationXml.Internal
 
         private void WriteObject(object obj, Type type)
         {
+            if (_depth >= MaxDepth)
+                throw new InvalidOperationException($"Max serialization depth ({MaxDepth}) exceeded. Possible circular reference in type '{type.FullName}'.");
+
             _sb.Append('{');
             _depth++;
 
@@ -130,6 +134,9 @@ namespace MazeNET.SerializationXml.Internal
 
         private void WriteArray(IEnumerable items)
         {
+            if (_depth >= MaxDepth)
+                throw new InvalidOperationException($"Max serialization depth ({MaxDepth}) exceeded. Possible circular reference.");
+
             _sb.Append('[');
             _depth++;
 

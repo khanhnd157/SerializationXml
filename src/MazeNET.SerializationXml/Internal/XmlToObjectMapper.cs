@@ -14,13 +14,15 @@ namespace MazeNET.SerializationXml.Internal
     /// </summary>
     internal static class XmlToObjectMapper
     {
+        private const int MaxDepth = 64;
+
         internal static T Map<T>(XmlDocument document) where T : new()
         {
             if (document == null || document.DocumentElement == null)
                 return new T();
 
             var result = new T();
-            MapElement(document.DocumentElement, result, typeof(T));
+            MapElement(document.DocumentElement, result, typeof(T), 0);
             return result;
         }
 
@@ -29,18 +31,21 @@ namespace MazeNET.SerializationXml.Internal
             if (string.IsNullOrEmpty(xml))
                 return new T();
 
-            var doc = new XmlDocument();
+            var doc = SafeXmlFactory.CreateDocument();
             doc.LoadXml(xml);
             return Map<T>(doc);
         }
 
-        private static void MapElement(XmlElement element, object target, Type targetType)
+        private static void MapElement(XmlElement element, object target, Type targetType, int depth)
         {
+            if (depth >= MaxDepth)
+                throw new InvalidOperationException($"Max mapping depth ({MaxDepth}) exceeded. Possible circular structure in type '{targetType.FullName}'.");
+
             var properties = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
             var propMap = BuildPropertyMap(properties);
 
             MapAttributes(element, target, propMap);
-            MapChildElements(element, target, propMap);
+            MapChildElements(element, target, propMap, depth);
             MapTextContent(element, target, propMap);
         }
 
@@ -70,7 +75,7 @@ namespace MazeNET.SerializationXml.Internal
             }
         }
 
-        private static void MapChildElements(XmlElement element, object target, Dictionary<string, PropertyInfo> propMap)
+        private static void MapChildElements(XmlElement element, object target, Dictionary<string, PropertyInfo> propMap, int depth)
         {
             var grouped = GroupChildElements(element);
 
@@ -90,7 +95,7 @@ namespace MazeNET.SerializationXml.Internal
 
                     foreach (var childEl in group.Value)
                     {
-                        var item = ConvertElement(childEl, itemType);
+                        var item = ConvertElement(childEl, itemType, depth + 1);
                         if (item != null) list.Add(item);
                     }
 
@@ -121,7 +126,7 @@ namespace MazeNET.SerializationXml.Internal
                     else if (actualType.IsClass && actualType != typeof(string))
                     {
                         var childObj = Activator.CreateInstance(actualType)!;
-                        MapElement(childEl, childObj, actualType);
+                        MapElement(childEl, childObj, actualType, depth + 1);
                         prop.SetValue(target, childObj);
                     }
                 }
@@ -143,7 +148,7 @@ namespace MazeNET.SerializationXml.Internal
             }
         }
 
-        private static object? ConvertElement(XmlElement element, Type targetType)
+        private static object? ConvertElement(XmlElement element, Type targetType, int depth)
         {
             if (IsSimpleType(targetType))
             {
@@ -154,7 +159,7 @@ namespace MazeNET.SerializationXml.Internal
             if (targetType.IsClass && targetType != typeof(string))
             {
                 var obj = Activator.CreateInstance(targetType)!;
-                MapElement(element, obj, targetType);
+                MapElement(element, obj, targetType, depth);
                 return obj;
             }
 

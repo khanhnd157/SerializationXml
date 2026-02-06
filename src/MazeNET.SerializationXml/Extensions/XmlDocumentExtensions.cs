@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Xml;
+using MazeNET.SerializationXml.Internal;
 using MazeNET.SerializationXml.Options;
 using MazeNET.SerializationXml.Services;
 
@@ -62,7 +63,7 @@ namespace MazeNET.SerializationXml
 
             var options = builder(new XmlOptionsBuilder()).Build();
 
-            var xmldocResult = new XmlDocument();
+            var xmldocResult = SafeXmlFactory.CreateDocument();
 
             var rootNode = options.RootName?.Trim();
 

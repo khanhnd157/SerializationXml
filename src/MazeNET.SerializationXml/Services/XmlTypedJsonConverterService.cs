@@ -56,7 +56,7 @@ namespace MazeNET.SerializationXml.Services
 
             try
             {
-                var doc = new XmlDocument();
+                var doc = SafeXmlFactory.CreateDocument();
                 doc.Load(filePath);
                 var obj = XmlToObjectMapper.Map<T>(doc);
                 return new ObjectToJsonWriter(indent).Write(obj);
