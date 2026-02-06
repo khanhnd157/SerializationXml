@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+using System;
 using System.Xml;
 using MazeNET.SerializationXml.Core.Interfaces;
 using MazeNET.SerializationXml.Core.Options;
