@@ -62,7 +62,7 @@ Install-Package MazeNET.SerializationXml
 **PackageReference (csproj):**
 
 ```xml
-<PackageReference Include="MazeNET.SerializationXml" Version="2.0.2" />
+<PackageReference Include="MazeNET.SerializationXml" Version="2.1.0" />
 ```
 
 ## E. Quick Start
@@ -320,7 +320,7 @@ This is a pure XML utility library. No database or migration is required.
 | .NET 9.0 | Yes |
 | .NET 10.0 | Yes |
 
-**Current version:** 2.0.2
+**Current version:** 2.1.0
 
 **Migration from v1.x (CodeMazeNET.Serialization.Xml):**
 
