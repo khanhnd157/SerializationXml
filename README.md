@@ -25,6 +25,7 @@
 - Typed JSON conversion (`XmlToJson<T>`) — XML → T → JSON with only T's properties
 - Fluent builder for XML output options (root element, declaration, schema, CDATA)
 - Async methods with `CancellationToken` support for all file operations
+- Smart file loading — auto-selects streaming (`XmlReader`) for large files (configurable threshold, default 50MB)
 - Extension methods on `XmlDocument` (`.ConvertToString()`, `.Builder()`, `.ToJson()`, `.ToJson<T>()`, `.ToObject<T>()`)
 - `IServiceCollection.AddSerializationXml()` for dependency injection
 - Custom `XmlSerializationException` with `TargetType` and `Operation` context
@@ -38,7 +39,7 @@
 | Language | C# (LangVersion: latest) |
 | Targets | `netstandard2.0`, `netstandard2.1`, `net48`, `net8.0`, `net9.0`, `net10.0` |
 | Dependencies | `Microsoft.Extensions.DependencyInjection.Abstractions 8.0.2` |
-| XML engine | `System.Xml` (`XmlDocument`, `XmlSerializer`) |
+| XML engine | `System.Xml` (`XmlDocument`, `XmlSerializer`, `XmlReader` for streaming) |
 | JSON engine | Built-in (no Newtonsoft.Json or System.Text.Json dependency) |
 
 This library does NOT require database or migration.
@@ -150,8 +151,14 @@ XmlConverter.SaveToFile("data.xml", myObject);
 // Save XmlDocument to file
 XmlConverter.SaveToFile<MyType>("data.xml", xmlDocument);
 
-// Load file → object
+// Load file → object (auto-streams if file > 50MB)
 var data = XmlConverter.FileToObject<MyType>("data.xml");
+
+// Load with custom threshold (100MB)
+var data = XmlConverter.FileToObject<MyType>("data.xml", 100 * 1024 * 1024);
+
+// Force streaming via XmlReader (lowest memory)
+var data = XmlConverter.DeserializeStream<MyType>("large-data.xml");
 
 // Load file → XmlDocument
 var doc = XmlConverter.LoadXml("data.xml");
@@ -163,8 +170,11 @@ var doc = XmlConverter.LoadXml("data.xml");
 var cts = new CancellationTokenSource();
 
 await XmlConverter.SaveToFileAsync("data.xml", myObject, cts.Token);
-var data = await XmlConverter.FileToObjectAsync<MyType>("data.xml", cts.Token);
+var data = await XmlConverter.FileToObjectAsync<MyType>("data.xml", cancellationToken: cts.Token);
 var doc = await XmlConverter.LoadXmlAsync("data.xml", cts.Token);
+
+// Async streaming for large files
+var data = await XmlConverter.DeserializeStreamAsync<MyType>("large.xml", cts.Token);
 ```
 
 ### XML to JSON
@@ -343,11 +353,12 @@ The public API remains backward compatible. Namespaces changed from `Core.*` / `
 |---|---|
 | `XmlSerializationException` on serialize | Check that the object is serializable (public class, parameterless constructor, public properties) |
 | `XmlSerializationException` on deserialize | Verify the XML string matches the target type structure |
-| `FileNotFoundException` | Verify the file path exists before calling `LoadXml` / `FileToObject` |
+| `FileNotFoundException` | Verify the file path exists before calling `LoadXml` / `FileToObject` / `DeserializeStream` |
 | `ArgumentException` on `RootElement()` | The name must be a valid XML element name (no spaces, special chars) |
 | Encoding issues | Use `XmlDeclarationOptions.Encoding` to set the desired encoding (default: UTF-8) |
 | JSON output includes `?xml` | Set `OmitXmlDeclaration = true` in `XmlToJsonOptions` (default) |
 | `XmlToObject<T>` returns null properties | Properties not matching any XML element/attribute remain null — use nullable types (`int?`, `string?`) |
+| Large XML file causes `OutOfMemoryException` | Use `DeserializeStream<T>` or set lower `streamingThresholdBytes` on `FileToObject<T>` |
 
 ## K. Contributing
 
