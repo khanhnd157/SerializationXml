@@ -8,7 +8,7 @@ namespace MazeNET.SerializationXml.Core.Options
         /// <summary>
         /// XML prefix
         /// </summary>
-        public string? PreFix { get; set; }
+        public string? Prefix { get; set; }
 
         /// <summary>
         /// Root element name
