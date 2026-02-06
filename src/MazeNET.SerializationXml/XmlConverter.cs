@@ -5,6 +5,7 @@ using System.Xml;
 using MazeNET.SerializationXml.Core.Interfaces;
 using MazeNET.SerializationXml.Core.Options;
 using MazeNET.SerializationXml.Infrastructure.Converters;
+using MazeNET.SerializationXml.Infrastructure.Extensions;
 
 namespace MazeNET.SerializationXml
 {
@@ -15,6 +16,7 @@ namespace MazeNET.SerializationXml
     {
         private static readonly IXmlSerializer _serializer = new XmlSerializerService();
         private static readonly IXmlFileOperations _fileOps = new XmlFileOperationsService();
+        private static readonly IXmlToJsonConverter _jsonConverter = new XmlToJsonConverterService();
 
         /// <summary>
         /// Save XmlDocument to file
@@ -142,6 +144,54 @@ namespace MazeNET.SerializationXml
         public static Task<T> DeserializeObjectAsync<T>(XmlDocument xmlDoc, CancellationToken cancellationToken = default) where T : new()
         {
             return _serializer.DeserializeAsync<T>(xmlDoc, cancellationToken);
+        }
+
+        /// <summary>
+        /// Convert XmlDocument to JSON string
+        /// </summary>
+        public static string XmlToJson(XmlDocument document)
+        {
+            return _jsonConverter.Convert(document);
+        }
+
+        /// <summary>
+        /// Convert XmlDocument to JSON string with custom options
+        /// </summary>
+        public static string XmlToJson(XmlDocument document, XmlToJsonOptions options)
+        {
+            return _jsonConverter.Convert(document, options);
+        }
+
+        /// <summary>
+        /// Convert XML string to JSON string
+        /// </summary>
+        public static string XmlToJson(string xml)
+        {
+            return _jsonConverter.Convert(xml);
+        }
+
+        /// <summary>
+        /// Convert XML string to JSON string with custom options
+        /// </summary>
+        public static string XmlToJson(string xml, XmlToJsonOptions options)
+        {
+            return _jsonConverter.Convert(xml, options);
+        }
+
+        /// <summary>
+        /// Convert XML file to JSON string
+        /// </summary>
+        public static string XmlFileToJson(string filePath)
+        {
+            return _jsonConverter.ConvertFile(filePath);
+        }
+
+        /// <summary>
+        /// Convert XML file to JSON string with custom options
+        /// </summary>
+        public static string XmlFileToJson(string filePath, XmlToJsonOptions options)
+        {
+            return _jsonConverter.ConvertFile(filePath, options);
         }
     }
 }

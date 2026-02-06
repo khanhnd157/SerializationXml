@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Xml;
 using MazeNET.SerializationXml.Core.Options;
+using MazeNET.SerializationXml.Infrastructure.Converters;
 
 namespace MazeNET.SerializationXml.Infrastructure.Extensions
 {
@@ -105,6 +106,24 @@ namespace MazeNET.SerializationXml.Infrastructure.Extensions
             }
 
             return xmldocResult;
+        }
+
+        private static readonly XmlToJsonConverterService _jsonConverter = new XmlToJsonConverterService();
+
+        /// <summary>
+        /// Convert XmlDocument to JSON string with default options
+        /// </summary>
+        public static string ToJson(this XmlDocument document)
+        {
+            return _jsonConverter.Convert(document);
+        }
+
+        /// <summary>
+        /// Convert XmlDocument to JSON string with custom options
+        /// </summary>
+        public static string ToJson(this XmlDocument document, XmlToJsonOptions options)
+        {
+            return _jsonConverter.Convert(document, options);
         }
     }
 }

@@ -10,12 +10,13 @@ namespace MazeNET.SerializationXml
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Registers IXmlSerializer and IXmlFileOperations as singleton services
+        /// Registers IXmlSerializer, IXmlFileOperations, and IXmlToJsonConverter as singleton services
         /// </summary>
         public static IServiceCollection AddSerializationXml(this IServiceCollection services)
         {
             services.AddSingleton<IXmlSerializer, XmlSerializerService>();
             services.AddSingleton<IXmlFileOperations, XmlFileOperationsService>();
+            services.AddSingleton<IXmlToJsonConverter, XmlToJsonConverterService>();
             return services;
         }
     }
