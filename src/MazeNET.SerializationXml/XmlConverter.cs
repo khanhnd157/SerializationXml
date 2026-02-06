@@ -2,21 +2,22 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using MazeNET.SerializationXml.Core.Interfaces;
-using MazeNET.SerializationXml.Core.Options;
-using MazeNET.SerializationXml.Infrastructure.Converters;
-using MazeNET.SerializationXml.Infrastructure.Extensions;
+using MazeNET.SerializationXml.Abstractions;
+using MazeNET.SerializationXml.Options;
+using MazeNET.SerializationXml.Services;
 
 namespace MazeNET.SerializationXml
 {
     /// <summary>
-    /// Facade for XML conversion operations (backward compatibility)
+    /// Static facade for all XML operations
     /// </summary>
     public static class XmlConverter
     {
         private static readonly IXmlSerializer _serializer = new XmlSerializerService();
         private static readonly IXmlFileOperations _fileOps = new XmlFileOperationsService();
         private static readonly IXmlToJsonConverter _jsonConverter = new XmlToJsonConverterService();
+        private static readonly IXmlToObjectMapper _objectMapper = new XmlToObjectMapperService();
+        private static readonly IXmlTypedJsonConverter _typedJsonConverter = new XmlTypedJsonConverterService();
 
         /// <summary>
         /// Save XmlDocument to file
@@ -199,7 +200,7 @@ namespace MazeNET.SerializationXml
         /// </summary>
         public static T XmlToObject<T>(XmlDocument document) where T : new()
         {
-            return _jsonConverter.ConvertTo<T>(document);
+            return _objectMapper.MapTo<T>(document);
         }
 
         /// <summary>
@@ -207,7 +208,7 @@ namespace MazeNET.SerializationXml
         /// </summary>
         public static T XmlToObject<T>(string xml) where T : new()
         {
-            return _jsonConverter.ConvertTo<T>(xml);
+            return _objectMapper.MapTo<T>(xml);
         }
 
         /// <summary>
@@ -215,7 +216,31 @@ namespace MazeNET.SerializationXml
         /// </summary>
         public static T XmlFileToObject<T>(string filePath) where T : new()
         {
-            return _jsonConverter.ConvertFileTo<T>(filePath);
+            return _objectMapper.MapFileTo<T>(filePath);
+        }
+
+        /// <summary>
+        /// Convert XmlDocument to JSON shaped by type T. Unmatched properties are null.
+        /// </summary>
+        public static string XmlToJson<T>(XmlDocument document, bool indent = true) where T : new()
+        {
+            return _typedJsonConverter.ConvertToJson<T>(document, indent);
+        }
+
+        /// <summary>
+        /// Convert XML string to JSON shaped by type T. Unmatched properties are null.
+        /// </summary>
+        public static string XmlToJson<T>(string xml, bool indent = true) where T : new()
+        {
+            return _typedJsonConverter.ConvertToJson<T>(xml, indent);
+        }
+
+        /// <summary>
+        /// Convert XML file to JSON shaped by type T. Unmatched properties are null.
+        /// </summary>
+        public static string XmlFileToJson<T>(string filePath, bool indent = true) where T : new()
+        {
+            return _typedJsonConverter.ConvertFileToJson<T>(filePath, indent);
         }
     }
 }

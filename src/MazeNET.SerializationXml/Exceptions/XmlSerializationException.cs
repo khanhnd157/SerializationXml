@@ -1,6 +1,6 @@
 using System;
 
-namespace MazeNET.SerializationXml.Core.Exceptions
+namespace MazeNET.SerializationXml.Exceptions
 {
     /// <summary>
     /// Exception thrown when XML serialization or deserialization fails

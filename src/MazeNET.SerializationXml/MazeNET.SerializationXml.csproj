@@ -12,7 +12,7 @@
     <PackageTags>.NET XML Serialization, XML Serialization, .NET Framework 4.8, .NET 8, .NET 9, .NET 10, Clean Architecture</PackageTags>
     <PackageIcon>Logo.png</PackageIcon>
     <PackageIconUrl />
-    <ApplicationIcon>Logo.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\Logo.ico</ApplicationIcon>
     <PackageProjectUrl>https://codemaze.net</PackageProjectUrl>
     <RepositoryUrl>https://github.com/khanhnd157/SerializationXml</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

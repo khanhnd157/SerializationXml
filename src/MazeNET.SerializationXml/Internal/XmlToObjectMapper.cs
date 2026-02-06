@@ -6,7 +6,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Xml;
 
-namespace MazeNET.SerializationXml.Infrastructure.Converters.Internal
+namespace MazeNET.SerializationXml.Internal
 {
     /// <summary>
     /// Maps XML elements to a typed object using reflection.

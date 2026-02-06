@@ -22,9 +22,10 @@
 - XML serialization and deserialization (object ↔ `XmlDocument` ↔ string ↔ file)
 - XML-to-JSON conversion with configurable options (zero external dependencies)
 - XML-to-Object mapping (`ConvertTo<T>`) — unmatched properties remain null/default
+- Typed JSON conversion (`XmlToJson<T>`) — XML → T → JSON with only T's properties
 - Fluent builder for XML output options (root element, declaration, schema, CDATA)
 - Async methods with `CancellationToken` support for all file operations
-- Extension methods on `XmlDocument` (`.ConvertToString()`, `.Builder()`, `.ToJson()`, `.ToObject<T>()`)
+- Extension methods on `XmlDocument` (`.ConvertToString()`, `.Builder()`, `.ToJson()`, `.ToJson<T>()`, `.ToObject<T>()`)
 - `IServiceCollection.AddSerializationXml()` for dependency injection
 - Custom `XmlSerializationException` with `TargetType` and `Operation` context
 - Nullable reference types enabled
@@ -189,6 +190,12 @@ string json = XmlConverter.XmlToJson(xmlDoc, new XmlToJsonOptions
     CDataNodeKey = "#cdata-section",
     IncludeNamespaces = false
 });
+
+// Typed JSON — XML → map to T → JSON (only T's properties, unmatched = null)
+string json = XmlConverter.XmlToJson<InvoiceDto>(xmlString);
+string json = XmlConverter.XmlToJson<InvoiceDto>(xmlDocument);
+string json = XmlConverter.XmlFileToJson<InvoiceDto>("data.xml");
+string json = xmlDoc.ToJson<InvoiceDto>(indent: true);
 ```
 
 ### XML to Typed Object
@@ -356,7 +363,7 @@ MazeNET.SerializationXml/
 │   └── Options/           # XmlOptions, XmlDeclarationOptions, XmlOptionsBuilder, XmlToJsonOptions
 ├── Infrastructure/
 │   ├── Converters/        # XmlSerializerService, XmlFileOperationsService, XmlToJsonConverterService
-│   │   └── Internal/      # XmlJsonWriter, XmlToObjectMapper
+│   │   └── Internal/      # XmlJsonWriter, ObjectToJsonWriter, XmlToObjectMapper
 │   └── Extensions/        # XmlExtensions, ServiceCollectionExtensions
 └── XmlConverter.cs        # Static facade
 ```

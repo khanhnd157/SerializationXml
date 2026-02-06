@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
-namespace MazeNET.SerializationXml.Core.Interfaces
+namespace MazeNET.SerializationXml.Abstractions
 {
     /// <summary>
     /// Interface for XML file operations

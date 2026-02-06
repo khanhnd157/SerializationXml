@@ -1,4 +1,4 @@
-namespace MazeNET.SerializationXml.Core.Options
+namespace MazeNET.SerializationXml.Options
 {
     /// <summary>
     /// Options for XML serialization
