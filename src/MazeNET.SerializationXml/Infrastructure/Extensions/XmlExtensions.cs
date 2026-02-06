@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Text;
 using System.Xml;
-using MazeNET.SerializationXml.Core.Interfaces;
 using MazeNET.SerializationXml.Core.Options;
+using MazeNET.SerializationXml.Infrastructure.Converters;
 
 namespace MazeNET.SerializationXml.Infrastructure.Extensions
 {
@@ -17,39 +17,33 @@ namespace MazeNET.SerializationXml.Infrastructure.Extensions
         /// </summary>
         public static string ConvertToString(this XmlDocument document)
         {
-#if NET9_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(document);
-#endif
+            if (document == null) throw new ArgumentNullException(nameof(document));
 
             var conformanceLevel = ConformanceLevel.Auto;
-            var isDeclaration = true;
+            var omitDeclaration = true;
 
-            if ((document.FirstChild as XmlDeclaration) != null)
+            if (document.FirstChild is XmlDeclaration)
             {
-                // remove old xml declaration
                 conformanceLevel = ConformanceLevel.Fragment;
-                isDeclaration = false;
+                omitDeclaration = false;
             }
 
-            using (MemoryStream memoryStream = new MemoryStream())
-            using (XmlWriter writer = XmlWriter.Create(
-                memoryStream,
-                new XmlWriterSettings
-                {
-                    Encoding = Encoding.UTF8,
-                    OmitXmlDeclaration = isDeclaration,
-                    ConformanceLevel = conformanceLevel,
-                    Indent = true,
-                    NewLineOnAttributes = false
-                }))
+            using (var memoryStream = new MemoryStream())
+            using (var writer = XmlWriter.Create(memoryStream, new XmlWriterSettings
+            {
+                Encoding = Encoding.UTF8,
+                OmitXmlDeclaration = omitDeclaration,
+                ConformanceLevel = conformanceLevel,
+                Indent = true,
+                NewLineOnAttributes = false
+            }))
             {
                 document.WriteContentTo(writer);
                 writer.Flush();
-                memoryStream.Flush();
                 memoryStream.Position = 0;
-                using (StreamReader streamReader = new StreamReader(memoryStream))
+                using (var reader = new StreamReader(memoryStream))
                 {
-                    return streamReader.ReadToEnd();
+                    return reader.ReadToEnd();
                 }
             }
         }
@@ -59,76 +53,85 @@ namespace MazeNET.SerializationXml.Infrastructure.Extensions
         /// </summary>
         public static XmlDocument Builder(this XmlDocument document, Func<XmlOptionsBuilder, XmlOptionsBuilder> builder)
         {
-#if NET9_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(document);
-            ArgumentNullException.ThrowIfNull(builder);
-#endif
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            if (builder == null) throw new ArgumentNullException(nameof(builder));
 
-            var xmlbuilder = new XmlOptionsBuilder();
-            var options = builder(xmlbuilder).Build();
+            var options = builder(new XmlOptionsBuilder()).Build();
 
-            if (options != null)
+            var xmldocResult = new XmlDocument();
+
+            var rootNode = options.RootName?.Trim();
+
+            if (!string.IsNullOrEmpty(rootNode))
             {
-                XmlDocument xmldocResult = new XmlDocument();
+                var innerXml = document.LastChild?.InnerXml ?? document.InnerXml;
 
-                var _rootNode = options.RootName?.Trim();
+                XmlElement root = options.RemoveXmlSchema
+                    ? xmldocResult.CreateElement(rootNode)
+                    : xmldocResult.CreateElement(rootNode, document.LastChild?.NamespaceURI ?? string.Empty);
 
-                if (!string.IsNullOrEmpty(_rootNode))
-                {
-                    var _innerXml = (document.LastChild?.InnerXml ?? document.InnerXml);
-
-                    XmlElement root = options.RemoveXmlSchema
-                        ? xmldocResult.CreateElement(_rootNode)
-                        : xmldocResult.CreateElement(_rootNode, document.LastChild?.NamespaceURI ?? string.Empty);
-
-                    root.InnerXml = _innerXml;
-
-                    xmldocResult.AppendChild(root);
-                }
-
-                if ((xmldocResult.FirstChild as XmlDeclaration) != null)
-                {
-                    // remove old xml declaration
-                    xmldocResult.RemoveChild(xmldocResult.FirstChild);
-                }
-
-                if (!options.RemoveDeclaration)
-                {
-                    var _version = "1.0";
-                    var _encoding = Encoding.UTF8.BodyName;
-                    var _standalone = "yes";
-
-                    if (options.Declaration != null)
-                    {
-                        _version = !string.IsNullOrEmpty(options.Declaration.Version?.Trim()) ? options.Declaration.Version : "1.0";
-#if NET9_0_OR_GREATER
-                        _encoding = options.Declaration.Encoding?.BodyName ?? Encoding.UTF8.BodyName;
-#else
-                        _encoding = options.Declaration.Encoding?.BodyName;
-#endif
-                        _standalone = options.Declaration.Standalone ? "yes" : "no";
-                    }
-
-                    XmlDeclaration xmldecl = xmldocResult.CreateXmlDeclaration(_version, _encoding, _standalone);
-                    //Add the new node to the document.
-#if NET9_0_OR_GREATER
-                    XmlElement? root = xmldocResult.DocumentElement;
-#else
-                    XmlElement root = xmldocResult.DocumentElement;
-#endif
-                    xmldocResult.InsertBefore(xmldecl, root);
-                }
-
-                if (options.RemoveTagCDDATA)
-                {
-                    xmldocResult.InnerXml = xmldocResult.InnerXml.Replace("<![CDATA[", "").Replace("]]>", "");
-                }
-
-                return xmldocResult;
+                root.InnerXml = innerXml;
+                xmldocResult.AppendChild(root);
             }
 
-            return document;
+            if (xmldocResult.FirstChild is XmlDeclaration)
+            {
+                xmldocResult.RemoveChild(xmldocResult.FirstChild);
+            }
+
+            if (!options.RemoveDeclaration)
+            {
+                var version = "1.0";
+                var encoding = Encoding.UTF8.BodyName;
+                var standalone = "yes";
+
+                if (options.Declaration != null)
+                {
+                    version = !string.IsNullOrEmpty(options.Declaration.Version?.Trim())
+                        ? options.Declaration.Version
+                        : "1.0";
+                    encoding = options.Declaration.Encoding?.BodyName ?? Encoding.UTF8.BodyName;
+                    standalone = options.Declaration.Standalone ? "yes" : "no";
+                }
+
+                var xmldecl = xmldocResult.CreateXmlDeclaration(version, encoding, standalone);
+                xmldocResult.InsertBefore(xmldecl, xmldocResult.DocumentElement);
+            }
+
+            if (options.RemoveTagCDDATA)
+            {
+                xmldocResult.InnerXml = xmldocResult.InnerXml
+                    .Replace("<![CDATA[", "")
+                    .Replace("]]>", "");
+            }
+
+            return xmldocResult;
+        }
+
+        private static readonly XmlToJsonConverterService _jsonConverter = new XmlToJsonConverterService();
+
+        /// <summary>
+        /// Convert XmlDocument to JSON string with default options
+        /// </summary>
+        public static string ToJson(this XmlDocument document)
+        {
+            return _jsonConverter.Convert(document);
+        }
+
+        /// <summary>
+        /// Convert XmlDocument to JSON string with custom options
+        /// </summary>
+        public static string ToJson(this XmlDocument document, XmlToJsonOptions options)
+        {
+            return _jsonConverter.Convert(document, options);
+        }
+
+        /// <summary>
+        /// Convert XmlDocument to typed object. Unmatched properties remain null/default.
+        /// </summary>
+        public static T ToObject<T>(this XmlDocument document) where T : new()
+        {
+            return _jsonConverter.ConvertTo<T>(document);
         }
     }
 }
-

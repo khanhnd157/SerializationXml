@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using MazeNET.SerializationXml.Core.Exceptions;
 using MazeNET.SerializationXml.Core.Interfaces;
-using MazeNET.SerializationXml.Infrastructure.Extensions;
 
 namespace MazeNET.SerializationXml.Infrastructure.Converters
 {
@@ -12,243 +14,209 @@ namespace MazeNET.SerializationXml.Infrastructure.Converters
     /// </summary>
     public class XmlFileOperationsService : IXmlFileOperations
     {
-#if NET9_0_OR_GREATER
         /// <inheritdoc/>
         public bool SaveToFile<T>(string fullPath, XmlDocument document)
         {
-            ArgumentNullException.ThrowIfNull(fullPath);
-            ArgumentNullException.ThrowIfNull(document);
+            if (fullPath == null) throw new ArgumentNullException(nameof(fullPath));
+            if (document == null) throw new ArgumentNullException(nameof(document));
 
-            using (TextWriter writeFileStream = new StreamWriter(fullPath))
+            try
             {
-                XmlSerializer serializerObj = new XmlSerializer(typeof(T));
-                serializerObj.Serialize(writeFileStream, document.ConvertToString());
-                writeFileStream.Dispose();
-
+                document.Save(fullPath);
                 return true;
+            }
+            catch (Exception ex)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to save XmlDocument to file '{fullPath}'.",
+                    typeof(XmlDocument), "SaveToFile", ex);
             }
         }
 
         /// <inheritdoc/>
         public bool SaveToFile<T>(string fullPath, T objectToSerialize)
         {
-            ArgumentNullException.ThrowIfNull(fullPath);
-            ArgumentNullException.ThrowIfNull(objectToSerialize);
+            if (fullPath == null) throw new ArgumentNullException(nameof(fullPath));
+            if (objectToSerialize == null) throw new ArgumentNullException(nameof(objectToSerialize));
 
-            using (TextWriter writeFileStream = new StreamWriter(fullPath))
+            try
             {
-                XmlSerializer serializerObj = new XmlSerializer(typeof(T));
-                serializerObj.Serialize(writeFileStream, objectToSerialize);
-                writeFileStream.Close();
-                return true;
+                using (TextWriter writer = new StreamWriter(fullPath))
+                {
+                    var serializer = new XmlSerializer(typeof(T));
+                    serializer.Serialize(writer, objectToSerialize);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to save object of type '{typeof(T).FullName}' to file '{fullPath}'.",
+                    typeof(T), "SaveToFile", ex);
             }
         }
 
         /// <inheritdoc/>
         public T LoadFromFile<T>(string fullPath)
         {
-            ArgumentNullException.ThrowIfNull(fullPath);
+            if (fullPath == null) throw new ArgumentNullException(nameof(fullPath));
 
-            FileStream? readFileStream = null;
             try
             {
-                using (readFileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var memoryStream = new MemoryStream())
                 {
-                    T loadedObj = default(T)!;
-                    XmlSerializer serializerObj = new XmlSerializer(typeof(T));
+                    stream.CopyTo(memoryStream);
+                    memoryStream.Position = 0;
 
-                    byte[] buffer = ReadByteArrayFormStream(readFileStream);
-
-                    readFileStream?.Close();
-
-                    Stream stream = new MemoryStream(buffer);
-
-                    loadedObj = (T)serializerObj.Deserialize(stream)!;
-
-                    return loadedObj;
+                    var serializer = new XmlSerializer(typeof(T));
+                    return (T)serializer.Deserialize(memoryStream)!;
                 }
             }
-            finally
+            catch (Exception ex) when (ex is not ArgumentNullException && ex is not FileNotFoundException)
             {
-                readFileStream?.Close();
+                throw new XmlSerializationException(
+                    $"Failed to load file '{fullPath}' as type '{typeof(T).FullName}'.",
+                    typeof(T), "LoadFromFile", ex);
             }
         }
 
         /// <inheritdoc/>
         public XmlDocument LoadXml(string path)
         {
-            ArgumentNullException.ThrowIfNull(path);
+            if (path == null) throw new ArgumentNullException(nameof(path));
 
-            FileStream? readFileStream = null;
+            if (!File.Exists(path))
+                throw new FileNotFoundException("File not found: " + path);
+
             try
             {
-                if (!File.Exists(path))
-                    throw new FileNotFoundException("File not found: " + path);
-
-                using (readFileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(readFileStream);
-
-                    return xmlDoc;
-                }
-            }
-            finally
-            {
-                readFileStream?.Close();
-            }
-        }
-#else
-        /// <inheritdoc/>
-        public bool SaveToFile<T>(string fullPath, XmlDocument document)
-        {
-            try
-            {
-                using (TextWriter writeFileStream = new StreamWriter(fullPath))
-                {
-                    XmlSerializer serializerObj = new XmlSerializer(typeof(T));
-                    serializerObj.Serialize(writeFileStream, document.ConvertToString());
-                    writeFileStream.Dispose();
-
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        /// <inheritdoc/>
-        public bool SaveToFile<T>(string fullPath, T objectToSerialize)
-        {
-            try
-            {
-                using (TextWriter writeFileStream = new StreamWriter(fullPath))
-                {
-                    XmlSerializer serializerObj = new XmlSerializer(typeof(T));
-                    serializerObj.Serialize(writeFileStream, objectToSerialize);
-                    writeFileStream.Close();
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        /// <inheritdoc/>
-        public T LoadFromFile<T>(string fullPath)
-        {
-            FileStream readFileStream = null;
-            try
-            {
-                using (readFileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    T loadedObj = default(T);
-                    XmlSerializer serializerObj = new XmlSerializer(typeof(T));
-
-                    byte[] buffer = ReadByteArrayFormStream(readFileStream);
-
-                    readFileStream?.Close();
-
-                    Stream stream = new MemoryStream(buffer);
-
-                    loadedObj = (T)serializerObj.Deserialize(stream);
-
-                    return loadedObj;
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            finally
-            {
-                readFileStream?.Close();
-            }
-        }
-
-        /// <inheritdoc/>
-        public XmlDocument LoadXml(string path)
-        {
-            FileStream readFileStream = null;
-            try
-            {
-                if (!File.Exists(path))
-                    throw new FileNotFoundException("File not found: " + path);
-
-                using (readFileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(readFileStream);
-
+                    var xmlDoc = new XmlDocument();
+                    xmlDoc.Load(stream);
                     return xmlDoc;
                 }
             }
             catch (Exception ex)
             {
-                throw ex;
-            }
-            finally
-            {
-                readFileStream?.Close();
+                throw new XmlSerializationException(
+                    $"Failed to load XML file '{path}'.",
+                    typeof(XmlDocument), "LoadXml", ex);
             }
         }
-#endif
 
-        private static byte[] ReadByteArrayFormStream(Stream stream)
+        /// <inheritdoc/>
+        public async Task<bool> SaveToFileAsync<T>(string fullPath, XmlDocument document, CancellationToken cancellationToken = default)
         {
-            long originalPosition = 0;
-
-            if (stream.CanSeek)
-            {
-                originalPosition = stream.Position;
-                stream.Position = 0;
-            }
+            if (fullPath == null) throw new ArgumentNullException(nameof(fullPath));
+            if (document == null) throw new ArgumentNullException(nameof(document));
 
             try
             {
-                byte[] readBuffer = new byte[4096];
-
-                int totalBytesRead = 0;
-                int bytesRead;
-
-                while ((bytesRead = stream.Read(readBuffer, totalBytesRead, readBuffer.Length - totalBytesRead)) > 0)
+                using (var memoryStream = new MemoryStream())
                 {
-                    totalBytesRead += bytesRead;
+                    document.Save(memoryStream);
+                    memoryStream.Position = 0;
 
-                    if (totalBytesRead == readBuffer.Length)
+                    using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
                     {
-                        int nextByte = stream.ReadByte();
-                        if (nextByte != -1)
-                        {
-                            byte[] temp = new byte[readBuffer.Length * 2];
-                            Buffer.BlockCopy(readBuffer, 0, temp, 0, readBuffer.Length);
-                            Buffer.SetByte(temp, totalBytesRead, (byte)nextByte);
-                            readBuffer = temp;
-                            totalBytesRead++;
-                        }
+                        await memoryStream.CopyToAsync(fileStream, 81920, cancellationToken).ConfigureAwait(false);
                     }
                 }
 
-                byte[] buffer = readBuffer;
-                if (readBuffer.Length != totalBytesRead)
-                {
-                    buffer = new byte[totalBytesRead];
-                    Buffer.BlockCopy(readBuffer, 0, buffer, 0, totalBytesRead);
-                }
-                return buffer;
+                return true;
             }
-            finally
+            catch (Exception ex) when (ex is not ArgumentNullException && ex is not OperationCanceledException)
             {
-                if (stream.CanSeek)
+                throw new XmlSerializationException(
+                    $"Failed to save XmlDocument to file '{fullPath}'.",
+                    typeof(XmlDocument), "SaveToFileAsync", ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> SaveToFileAsync<T>(string fullPath, T objectToSerialize, CancellationToken cancellationToken = default)
+        {
+            if (fullPath == null) throw new ArgumentNullException(nameof(fullPath));
+            if (objectToSerialize == null) throw new ArgumentNullException(nameof(objectToSerialize));
+
+            try
+            {
+                using (var memoryStream = new MemoryStream())
                 {
-                    stream.Position = originalPosition;
+                    var serializer = new XmlSerializer(typeof(T));
+                    serializer.Serialize(memoryStream, objectToSerialize);
+                    memoryStream.Position = 0;
+
+                    using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+                    {
+                        await memoryStream.CopyToAsync(fileStream, 81920, cancellationToken).ConfigureAwait(false);
+                    }
                 }
+
+                return true;
+            }
+            catch (Exception ex) when (ex is not ArgumentNullException && ex is not OperationCanceledException)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to save object of type '{typeof(T).FullName}' to file '{fullPath}'.",
+                    typeof(T), "SaveToFileAsync", ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<T> LoadFromFileAsync<T>(string fullPath, CancellationToken cancellationToken = default)
+        {
+            if (fullPath == null) throw new ArgumentNullException(nameof(fullPath));
+
+            try
+            {
+                using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
+                using (var memoryStream = new MemoryStream())
+                {
+                    await fileStream.CopyToAsync(memoryStream, 81920, cancellationToken).ConfigureAwait(false);
+                    memoryStream.Position = 0;
+
+                    var serializer = new XmlSerializer(typeof(T));
+                    return (T)serializer.Deserialize(memoryStream)!;
+                }
+            }
+            catch (Exception ex) when (ex is not ArgumentNullException && ex is not FileNotFoundException && ex is not OperationCanceledException)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to load file '{fullPath}' as type '{typeof(T).FullName}'.",
+                    typeof(T), "LoadFromFileAsync", ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<XmlDocument> LoadXmlAsync(string path, CancellationToken cancellationToken = default)
+        {
+            if (path == null) throw new ArgumentNullException(nameof(path));
+
+            if (!File.Exists(path))
+                throw new FileNotFoundException("File not found: " + path);
+
+            try
+            {
+                using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
+                using (var memoryStream = new MemoryStream())
+                {
+                    await fileStream.CopyToAsync(memoryStream, 81920, cancellationToken).ConfigureAwait(false);
+                    memoryStream.Position = 0;
+
+                    var xmlDoc = new XmlDocument();
+                    xmlDoc.Load(memoryStream);
+                    return xmlDoc;
+                }
+            }
+            catch (Exception ex) when (ex is not ArgumentNullException && ex is not FileNotFoundException && ex is not OperationCanceledException)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to load XML file '{path}'.",
+                    typeof(XmlDocument), "LoadXmlAsync", ex);
             }
         }
     }
 }
-

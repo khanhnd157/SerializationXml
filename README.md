@@ -1,209 +1,70 @@
 # MazeNET.SerializationXml
 
-[![.NET Standard-2.0](https://img.shields.io/badge/.NET%20Standard-2.0-blue.svg)](https://dotnet.microsoft.com/)
-[![.NET Standard-2.1](https://img.shields.io/badge/.NET%20Standard-2.1-blue.svg)](https://dotnet.microsoft.com/)
-[![.NET 8.0](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-[![.NET 9.0](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
-[![.NET 10.0](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-[![.NET 4.8](https://img.shields.io/badge/.NET-4.8-purple.svg)](https://dotnet.microsoft.com/en-us/download/dotnet-framework/net48)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![NuGet](https://img.shields.io/nuget/v/MazeNET.SerializationXml.svg)](https://www.nuget.org/packages/MazeNET.SerializationXml/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-Standard%202.0%20|%202.1%20|%204.8%20|%208%20|%209%20|%2010-blue.svg)](https://dotnet.microsoft.com/)
 
-.NET XML Serialization Helper - Clean Architecture
+## A. Project Overview
 
-## ✨ Features
-- ✅ Clean Architecture design pattern
-- ✅ Interface-based abstractions
-- ✅ Multi-targeting support: `.NET Standard 2.0`, `.NET Standard 2.1`, `.NET Framework 4.8`, `.NET 8.0`, `.NET 9.0`, `.NET 10.0`
-- ✅ Nullable reference types support for .NET 8+
-- ✅ Comprehensive XML documentation
-- ✅ Backward compatible API
+**MazeNET.SerializationXml** is a lightweight .NET library for XML serialization, deserialization, file I/O, and XML-to-JSON conversion. Built with Clean Architecture and zero heavy external dependencies.
 
-## 🏗️ Architecture
+**Use cases:**
 
-```
-MazeNET.SerializationXml/
-├── Core/
-│   ├── Interfaces/
-│   │   ├── IXmlSerializer.cs
-│   │   ├── IXmlFileOperations.cs
-│   │   └── IXmlDocumentConverter.cs
-│   └── Options/
-│       ├── XmlOptions.cs
-│       ├── XmlDeclarationOptions.cs
-│       └── XmlOptionsBuilder.cs
-└── Infrastructure/
-    ├── Converters/
-    │   ├── XmlSerializerService.cs
-    │   └── XmlFileOperationsService.cs
-    └── Extensions/
-        └── XmlExtensions.cs
-```
+- Serialize/deserialize C# objects to/from XML
+- Read and write XML files
+- Convert XML to JSON (from string, `XmlDocument`, or file)
+- Integrate with dependency injection in ASP.NET Core / .NET Generic Host
 
-## 📦 Installation
+**Target audience:** Backend developers, desktop app developers, and teams working with legacy XML-based systems or APIs.
 
-Install from NUGET https://www.nuget.org/packages/MazeNET.SerializationXml/
+## B. Features
 
-```powershell
-Install-Package MazeNET.SerializationXml
-```
+- XML serialization and deserialization (object ↔ `XmlDocument` ↔ string ↔ file)
+- XML-to-JSON conversion with configurable options (zero external dependencies)
+- XML-to-Object mapping (`ConvertTo<T>`) — unmatched properties remain null/default
+- Fluent builder for XML output options (root element, declaration, schema, CDATA)
+- Async methods with `CancellationToken` support for all file operations
+- Extension methods on `XmlDocument` (`.ConvertToString()`, `.Builder()`, `.ToJson()`, `.ToObject<T>()`)
+- `IServiceCollection.AddSerializationXml()` for dependency injection
+- Custom `XmlSerializationException` with `TargetType` and `Operation` context
+- Nullable reference types enabled
+- Multi-targeting: `.NET Standard 2.0`, `.NET Standard 2.1`, `.NET Framework 4.8`, `.NET 8`, `.NET 9`, `.NET 10`
 
-Or via .NET CLI:
+## C. Tech Stack
+
+| Component | Detail |
+|---|---|
+| Language | C# (LangVersion: latest) |
+| Targets | `netstandard2.0`, `netstandard2.1`, `net48`, `net8.0`, `net9.0`, `net10.0` |
+| Dependencies | `Microsoft.Extensions.DependencyInjection.Abstractions 8.0.2` |
+| XML engine | `System.Xml` (`XmlDocument`, `XmlSerializer`) |
+| JSON engine | Built-in (no Newtonsoft.Json or System.Text.Json dependency) |
+
+This library does NOT require database or migration.
+
+## D. Installation
+
+**NuGet:** https://www.nuget.org/packages/MazeNET.SerializationXml/
+
+**.NET CLI:**
 
 ```bash
 dotnet add package MazeNET.SerializationXml
 ```
 
-## 🚀 Usage
+**Package Manager:**
 
-Include package into your project:
-                
-```csharp
-using MazeNET.SerializationXml;
-using MazeNET.SerializationXml.Core.Interfaces;
-using MazeNET.SerializationXml.Core.Options;
+```powershell
+Install-Package MazeNET.SerializationXml
 ```
 
-## 📖 API Reference
+**PackageReference (csproj):**
 
-### Using Facade (Simple API - Backward Compatible)
-
-#### SerializeObject    
-          
-SerializeObject to XmlDocument:
-    
-```csharp
-var doc = XmlConverter.SerializeObject(myObject);
-
-// -- Serialize with config
-var doc = XmlConverter.SerializeObject(myObject, builder =>
-          builder.RootElement("Products")
-                .RemoveDeclaration()
-                .RemoveTagCDDATA()
-                .RemoveSchema());
-      
-// -- OR add options with builder function:
-var doc = XmlConverter.SerializeObject(myObject).Builder(builder =>
-          builder.RootElement("RootName")
-                 .RemoveDeclaration()
-                 .RemoveTagCDDATA()
-                 .RemoveSchema());
-```
-                 
-#### DeserializeObject
-
-```csharp
-// From XML string
-var myObject = XmlConverter.DeserializeObject<MyType>(xmlString);
-
-// From XmlDocument
-var myObject = XmlConverter.DeserializeObject<MyType>(xmlDocument);
+```xml
+<PackageReference Include="MazeNET.SerializationXml" Version="2.0.2" />
 ```
 
-#### ConvertToString
-
-```csharp
-// Convert XmlDocument to string
-var xmlString = xmlDocument.ConvertToString();
-
-// OR chain with serialization
-var xmlString = XmlConverter.SerializeObject(myObject).ConvertToString();
-```
-    
-#### Load file XML to XmlDocument:
-    
-```csharp
-var path = @"C:\Invoices.xml";
-var doc = XmlConverter.LoadXml(path);
-```
-    
-#### Load file XML to Object:
-    
-```csharp
-var path = @"C:\Invoices.xml";
-var data = XmlConverter.FileToObject<Invoice>(path);
-```
-            
-#### Save data to file XML:
-    
-```csharp
-// Save object to file
-var path = @"C:\Invoices.xml";
-XmlConverter.SaveToFile(path, myObject);
-
-// Save XmlDocument to file
-var path = @"C:\Invoices.xml";
-XmlConverter.SaveToFile<Invoice>(path, xmlDocument);
-```
-
-### Using Interfaces (Dependency Injection)
-
-For modern applications using dependency injection:
-
-```csharp
-using MazeNET.SerializationXml.Core.Interfaces;
-using MazeNET.SerializationXml.Infrastructure.Converters;
-
-// Register in your DI container
-services.AddSingleton<IXmlSerializer, XmlSerializerService>();
-services.AddSingleton<IXmlFileOperations, XmlFileOperationsService>();
-
-// Use in your classes
-public class MyService
-{
-    private readonly IXmlSerializer _xmlSerializer;
-    private readonly IXmlFileOperations _fileOps;
-    
-    public MyService(IXmlSerializer xmlSerializer, IXmlFileOperations fileOps)
-    {
-        _xmlSerializer = xmlSerializer;
-        _fileOps = fileOps;
-    }
-    
-    public void SaveData(MyData data, string path)
-    {
-        var xmlDoc = _xmlSerializer.Serialize(data);
-        _fileOps.SaveToFile(path, xmlDoc);
-    }
-    
-    public MyData LoadData(string path)
-    {
-        return _fileOps.LoadFromFile<MyData>(path);
-    }
-}
-```
-
-## 🔧 Configuration Options
-
-### XmlOptionsBuilder Methods
-
-- `RootElement(string name)` - Set root element name
-- `AddDeclaration(XmlDeclarationOptions)` - Add XML declaration
-- `RemoveDeclaration(bool)` - Remove XML declaration
-- `RemoveSchema(bool)` - Remove XML schema
-- `RemoveTagCDDATA(bool)` - Remove CDATA tags
-- `AddPrefix(string)` - Add XML prefix
-
-### XmlDeclarationOptions Properties
-
-- `Version` - XML version (default: "1.0")
-- `Encoding` - XML encoding (default: UTF-8)
-- `Standalone` - Standalone declaration (default: true)
-
-## 🔄 Migration from v1.x
-
-If you're upgrading from CodeMazeNET.Serialization.Xml v1.x:
-
-```csharp
-// Old namespace (v1.x)
-using CodeMazeNET.Serialization.Xml;
-
-// New namespace (v2.x)
-using MazeNET.SerializationXml;
-```
-
-The API remains the same, so your existing code will work with just the namespace change!
-
-## 📝 Example
+## E. Quick Start
 
 ```csharp
 using MazeNET.SerializationXml;
@@ -216,42 +77,290 @@ public class Invoice
     public decimal Amount { get; set; }
 }
 
-// Serialize
-var invoice = new Invoice 
-{ 
-    Id = 1, 
-    Customer = "John Doe", 
-    Amount = 150.00m 
-};
+// Serialize object → XmlDocument
+var invoice = new Invoice { Id = 1, Customer = "John", Amount = 100m };
+var xmlDoc = XmlConverter.SerializeObject(invoice);
 
-var xmlDoc = XmlConverter.SerializeObject(invoice, builder => 
-    builder.RootElement("Invoice")
-           .RemoveSchema()
-           .AddDeclaration(new XmlDeclarationOptions
-           {
-               Version = "1.0",
-               Encoding = Encoding.UTF8,
-               Standalone = true
-           }));
+// Serialize with options
+var xmlDoc2 = XmlConverter.SerializeObject(invoice, b => b
+    .RootElement("Invoice")
+    .RemoveSchema()
+    .RemoveDeclaration());
 
-// Save to file
-XmlConverter.SaveToFile("invoice.xml", invoice);
-
-// Load from file
-var loadedInvoice = XmlConverter.FileToObject<Invoice>("invoice.xml");
-
-// Deserialize from XML string
+// XmlDocument → string
 var xmlString = xmlDoc.ConvertToString();
-var deserializedInvoice = XmlConverter.DeserializeObject<Invoice>(xmlString);
+
+// Deserialize string → object
+var obj = XmlConverter.DeserializeObject<Invoice>(xmlString);
+
+// Save / Load file
+XmlConverter.SaveToFile("invoice.xml", invoice);
+var loaded = XmlConverter.FileToObject<Invoice>("invoice.xml");
+
+// XML → JSON
+var json = xmlDoc.ToJson();
+var json2 = XmlConverter.XmlToJson("<root><name>Test</name></root>");
+
+// XML → Typed Object (unmatched properties = null)
+var dto = XmlConverter.XmlToObject<InvoiceDto>(xmlString);
 ```
 
-## 🎯 Benefits of Clean Architecture
+## F. Usage Guide
 
-1. **Separation of Concerns** - Core business logic separated from infrastructure
-2. **Testability** - Easy to mock interfaces for unit testing
-3. **Maintainability** - Clear structure makes code easier to understand and modify
-4. **Flexibility** - Easy to swap implementations without changing client code
-5. **Dependency Inversion** - High-level modules don't depend on low-level modules
+### Serialize
 
-# Thanks
-### Thanks for use
+```csharp
+// Default options (UTF-8 declaration, schema removed)
+XmlDocument doc = XmlConverter.SerializeObject(myObject);
+
+// Custom options via fluent builder
+XmlDocument doc = XmlConverter.SerializeObject(myObject, b => b
+    .RootElement("Products")
+    .AddDeclaration(new XmlDeclarationOptions
+    {
+        Version = "1.0",
+        Encoding = Encoding.UTF8,
+        Standalone = true
+    })
+    .RemoveSchema()
+    .RemoveTagCDDATA());
+
+// Chain builder on existing XmlDocument
+XmlDocument doc = XmlConverter.SerializeObject(myObject)
+    .Builder(b => b.RootElement("Root").RemoveDeclaration());
+```
+
+### Deserialize
+
+```csharp
+// From XML string
+var obj = XmlConverter.DeserializeObject<MyType>(xmlString);
+
+// From XmlDocument
+var obj = XmlConverter.DeserializeObject<MyType>(xmlDocument);
+```
+
+### File Operations
+
+```csharp
+// Save object to XML file
+XmlConverter.SaveToFile("data.xml", myObject);
+
+// Save XmlDocument to file
+XmlConverter.SaveToFile<MyType>("data.xml", xmlDocument);
+
+// Load file → object
+var data = XmlConverter.FileToObject<MyType>("data.xml");
+
+// Load file → XmlDocument
+var doc = XmlConverter.LoadXml("data.xml");
+```
+
+### Async File Operations
+
+```csharp
+var cts = new CancellationTokenSource();
+
+await XmlConverter.SaveToFileAsync("data.xml", myObject, cts.Token);
+var data = await XmlConverter.FileToObjectAsync<MyType>("data.xml", cts.Token);
+var doc = await XmlConverter.LoadXmlAsync("data.xml", cts.Token);
+```
+
+### XML to JSON
+
+```csharp
+// From XmlDocument
+string json = xmlDoc.ToJson();
+
+// From XML string
+string json = XmlConverter.XmlToJson("<root><item>1</item></root>");
+
+// From file
+string json = XmlConverter.XmlFileToJson("data.xml");
+
+// With options
+string json = XmlConverter.XmlToJson(xmlDoc, new XmlToJsonOptions
+{
+    Indent = true,
+    OmitRootObject = true,
+    OmitXmlDeclaration = true,
+    AttributePrefix = "@",
+    TextNodeKey = "#text",
+    CDataNodeKey = "#cdata-section",
+    IncludeNamespaces = false
+});
+```
+
+### XML to Typed Object
+
+Map XML directly to a C# object. Properties in `T` that don't match any XML element/attribute will remain `null` (or default value).
+
+```csharp
+public class InvoiceDto
+{
+    public int? Id { get; set; }
+    public string? Customer { get; set; }
+    public decimal? Total { get; set; }
+    public string? Note { get; set; }        // not in XML → null
+    public DateTime? DueDate { get; set; }   // not in XML → null
+}
+
+// From XML string
+var dto = XmlConverter.XmlToObject<InvoiceDto>(xmlString);
+
+// From XmlDocument
+var dto = XmlConverter.XmlToObject<InvoiceDto>(xmlDocument);
+
+// From file
+var dto = XmlConverter.XmlFileToObject<InvoiceDto>("invoice.xml");
+
+// Extension method
+var dto = xmlDocument.ToObject<InvoiceDto>();
+```
+
+Supports: nested objects, collections (`List<T>`, `T[]`), all primitive types, enums, `DateTime`, `Guid`, `TimeSpan`, case-insensitive matching.
+
+### Dependency Injection
+
+```csharp
+// Register all services
+services.AddSerializationXml();
+
+// Inject interfaces
+public class MyService
+{
+    private readonly IXmlSerializer _serializer;
+    private readonly IXmlFileOperations _fileOps;
+    private readonly IXmlToJsonConverter _jsonConverter;
+
+    public MyService(
+        IXmlSerializer serializer,
+        IXmlFileOperations fileOps,
+        IXmlToJsonConverter jsonConverter)
+    {
+        _serializer = serializer;
+        _fileOps = fileOps;
+        _jsonConverter = jsonConverter;
+    }
+}
+```
+
+### Error Handling
+
+All serialization and file errors are wrapped in `XmlSerializationException`:
+
+```csharp
+try
+{
+    var obj = XmlConverter.DeserializeObject<MyType>(badXml);
+}
+catch (XmlSerializationException ex)
+{
+    Console.WriteLine(ex.Message);     // Descriptive error message
+    Console.WriteLine(ex.TargetType);  // typeof(MyType)
+    Console.WriteLine(ex.Operation);   // "Deserialize"
+    Console.WriteLine(ex.InnerException); // Original exception
+}
+```
+
+`ArgumentNullException`, `FileNotFoundException`, and `OperationCanceledException` are **not** wrapped — they propagate directly.
+
+## G. Configuration
+
+This library does not require configuration files or app settings. All behavior is controlled through method parameters and options objects (`XmlOptionsBuilder`, `XmlToJsonOptions`, `XmlDeclarationOptions`).
+
+### XmlOptionsBuilder
+
+| Method | Description |
+|---|---|
+| `RootElement(string)` | Set root element name (validated as valid XML name) |
+| `AddDeclaration(XmlDeclarationOptions)` | Add XML declaration |
+| `RemoveDeclaration(bool)` | Remove XML declaration |
+| `RemoveSchema(bool)` | Remove XML namespace schema |
+| `RemoveTagCDDATA(bool)` | Remove CDATA tags |
+| `AddPrefix(string)` | Add XML prefix |
+
+### XmlToJsonOptions
+
+| Property | Default | Description |
+|---|---|---|
+| `Indent` | `true` | Pretty-print JSON |
+| `OmitRootObject` | `false` | Skip root object wrapper |
+| `OmitXmlDeclaration` | `true` | Exclude `<?xml?>` from JSON |
+| `AttributePrefix` | `"@"` | Prefix for XML attribute keys |
+| `TextNodeKey` | `"#text"` | Key for text content |
+| `CDataNodeKey` | `"#cdata-section"` | Key for CDATA content |
+| `IncludeNamespaces` | `false` | Include xmlns attributes |
+
+## H. Database & Migration
+
+This is a pure XML utility library. No database or migration is required.
+
+## I. Versioning & Compatibility
+
+| Target | Supported |
+|---|---|
+| .NET Standard 2.0 | Yes |
+| .NET Standard 2.1 | Yes |
+| .NET Framework 4.8 | Yes |
+| .NET 8.0 | Yes |
+| .NET 9.0 | Yes |
+| .NET 10.0 | Yes |
+
+**Current version:** 2.0.2
+
+**Migration from v1.x (CodeMazeNET.Serialization.Xml):**
+
+```csharp
+// v1.x namespace
+using CodeMazeNET.Serialization.Xml;
+
+// v2.x namespace
+using MazeNET.SerializationXml;
+```
+
+The public API remains backward compatible. Only the namespace changed.
+
+## J. Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| `XmlSerializationException` on serialize | Check that the object is serializable (public class, parameterless constructor, public properties) |
+| `XmlSerializationException` on deserialize | Verify the XML string matches the target type structure |
+| `FileNotFoundException` | Verify the file path exists before calling `LoadXml` / `FileToObject` |
+| `ArgumentException` on `RootElement()` | The name must be a valid XML element name (no spaces, special chars) |
+| Encoding issues | Use `XmlDeclarationOptions.Encoding` to set the desired encoding (default: UTF-8) |
+| JSON output includes `?xml` | Set `OmitXmlDeclaration = true` in `XmlToJsonOptions` (default) |
+| `XmlToObject<T>` returns null properties | Properties not matching any XML element/attribute remain null — use nullable types (`int?`, `string?`) |
+
+## K. Contributing
+
+**Build:**
+
+```bash
+cd src
+dotnet build
+```
+
+**Run tests:**
+
+> TODO: No test project found in repo. Test project should be added.
+
+**Project structure:**
+
+```
+MazeNET.SerializationXml/
+├── Core/
+│   ├── Exceptions/        # XmlSerializationException
+│   ├── Interfaces/        # IXmlSerializer, IXmlFileOperations, IXmlToJsonConverter
+│   └── Options/           # XmlOptions, XmlDeclarationOptions, XmlOptionsBuilder, XmlToJsonOptions
+├── Infrastructure/
+│   ├── Converters/        # XmlSerializerService, XmlFileOperationsService, XmlToJsonConverterService
+│   │   └── Internal/      # XmlJsonWriter, XmlToObjectMapper
+│   └── Extensions/        # XmlExtensions, ServiceCollectionExtensions
+└── XmlConverter.cs        # Static facade
+```
+
+## L. License
+
+[MIT License](LICENSE) - Copyright (c) 2021 Duy Khanh

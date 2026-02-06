@@ -1,3 +1,6 @@
+using System;
+using System.Xml;
+
 namespace MazeNET.SerializationXml.Core.Options
 {
     /// <summary>
@@ -17,6 +20,7 @@ namespace MazeNET.SerializationXml.Core.Options
         /// </summary>
         public XmlOptionsBuilder AddDeclaration(XmlDeclarationOptions declaration)
         {
+            if (declaration == null) throw new ArgumentNullException(nameof(declaration));
             _options.Declaration = declaration;
             return this;
         }
@@ -26,7 +30,9 @@ namespace MazeNET.SerializationXml.Core.Options
         /// </summary>
         public XmlOptionsBuilder AddPrefix(string prefix)
         {
-            _options.PreFix = prefix;
+            if (string.IsNullOrWhiteSpace(prefix))
+                throw new ArgumentException("Prefix cannot be null or whitespace.", nameof(prefix));
+            _options.Prefix = prefix;
             return this;
         }
 
@@ -58,10 +64,22 @@ namespace MazeNET.SerializationXml.Core.Options
         }
 
         /// <summary>
-        /// Set root element name
+        /// Set root element name (must be a valid XML name)
         /// </summary>
         public XmlOptionsBuilder RootElement(string name)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Root element name cannot be null or whitespace.", nameof(name));
+
+            try
+            {
+                XmlConvert.VerifyName(name);
+            }
+            catch (XmlException ex)
+            {
+                throw new ArgumentException($"'{name}' is not a valid XML element name.", nameof(name), ex);
+            }
+
             _options.RootName = name;
             return this;
         }
@@ -75,4 +93,3 @@ namespace MazeNET.SerializationXml.Core.Options
         }
     }
 }
-

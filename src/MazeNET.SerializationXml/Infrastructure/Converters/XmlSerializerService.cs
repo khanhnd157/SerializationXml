@@ -1,8 +1,11 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using MazeNET.SerializationXml.Core.Exceptions;
 using MazeNET.SerializationXml.Core.Interfaces;
 using MazeNET.SerializationXml.Core.Options;
 using MazeNET.SerializationXml.Infrastructure.Extensions;
@@ -14,118 +17,40 @@ namespace MazeNET.SerializationXml.Infrastructure.Converters
     /// </summary>
     public class XmlSerializerService : IXmlSerializer
     {
-#if NET9_0_OR_GREATER
         /// <inheritdoc/>
         public XmlDocument Serialize<T>(T dataObject, Func<XmlOptionsBuilder, XmlOptionsBuilder> builder)
         {
-            ArgumentNullException.ThrowIfNull(builder);
-
-            dataObject ??= default(T)!;
-
-            using (StringWriter stringWriter = new StringWriter())
-            {
-                var serializer = new XmlSerializer(typeof(T));
-                serializer.Serialize(stringWriter, dataObject);
-
-                var dataSerialize = stringWriter?.ToString() ?? string.Empty;
-
-                if (string.IsNullOrEmpty(dataSerialize)) return new XmlDocument();
-
-                XmlDocument xmldoc = new XmlDocument();
-                xmldoc.LoadXml(dataSerialize);
-
-                return xmldoc.Builder(builder);
-            }
-        }
-
-        /// <inheritdoc/>
-        public XmlDocument Serialize<T>(T dataObject)
-        {
-            return Serialize<T>(dataObject, builder => builder
-                .AddDeclaration(new XmlDeclarationOptions
-                {
-                    Encoding = Encoding.UTF8,
-                    Standalone = true,
-                    Version = "1.0"
-                })
-                .RemoveSchema());
-        }
-
-        /// <inheritdoc/>
-        public T Deserialize<T>(string dataxml) where T : new()
-        {
-            if (string.IsNullOrEmpty(dataxml))
-            {
-                return new T();
-            }
-            try
-            {
-                using (var stringReader = new StringReader(dataxml))
-                {
-                    var serializer = new XmlSerializer(typeof(T));
-                    return (T)serializer.Deserialize(stringReader)!;
-                }
-            }
-            catch
-            {
-                return new T();
-            }
-        }
-
-        /// <inheritdoc/>
-        public T Deserialize<T>(XmlDocument? xmlDoc) where T : new()
-        {
-            try
-            {
-                if (xmlDoc == null)
-                    return default(T)!;
-
-                var data = xmlDoc.ConvertToString();
-
-                using (var stringReader = new StringReader(data))
-                {
-                    var serializer = new XmlSerializer(typeof(T));
-                    return (T)serializer.Deserialize(stringReader)!;
-                }
-            }
-            catch
-            {
-                return new T();
-            }
-        }
-#else
-        /// <inheritdoc/>
-        public XmlDocument Serialize<T>(T dataObject, Func<XmlOptionsBuilder, XmlOptionsBuilder> builder)
-        {
-            if (dataObject == null) dataObject = default(T);
+            if (builder == null) throw new ArgumentNullException(nameof(builder));
 
             try
             {
-                using (StringWriter stringWriter = new StringWriter())
+                using (var stringWriter = new StringWriter())
                 {
                     var serializer = new XmlSerializer(typeof(T));
                     serializer.Serialize(stringWriter, dataObject);
 
-                    var dataSerialize = stringWriter?.ToString() ?? string.Empty;
+                    var dataSerialize = stringWriter.ToString();
 
                     if (string.IsNullOrEmpty(dataSerialize)) return new XmlDocument();
 
-                    XmlDocument xmldoc = new XmlDocument();
+                    var xmldoc = new XmlDocument();
                     xmldoc.LoadXml(dataSerialize);
 
                     return xmldoc.Builder(builder);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not ArgumentNullException)
             {
-                throw ex;
+                throw new XmlSerializationException(
+                    $"Failed to serialize object of type '{typeof(T).FullName}'.",
+                    typeof(T), "Serialize", ex);
             }
         }
 
         /// <inheritdoc/>
         public XmlDocument Serialize<T>(T dataObject)
         {
-            return Serialize<T>(dataObject, builder => builder
+            return Serialize(dataObject, b => b
                 .AddDeclaration(new XmlDeclarationOptions
                 {
                     Encoding = Encoding.UTF8,
@@ -139,45 +64,74 @@ namespace MazeNET.SerializationXml.Infrastructure.Converters
         public T Deserialize<T>(string dataxml) where T : new()
         {
             if (string.IsNullOrEmpty(dataxml))
-            {
                 return new T();
-            }
+
             try
             {
                 using (var stringReader = new StringReader(dataxml))
                 {
                     var serializer = new XmlSerializer(typeof(T));
-                    return (T)serializer.Deserialize(stringReader);
+                    return (T)serializer.Deserialize(stringReader)!;
                 }
             }
             catch (Exception ex)
             {
-                return new T();
+                throw new XmlSerializationException(
+                    $"Failed to deserialize XML string to type '{typeof(T).FullName}'.",
+                    typeof(T), "Deserialize", ex);
             }
         }
 
         /// <inheritdoc/>
         public T Deserialize<T>(XmlDocument xmlDoc) where T : new()
         {
+            if (xmlDoc == null)
+                return new T();
+
             try
             {
-                if (xmlDoc == null)
-                    return default(T);
-
                 var data = xmlDoc.ConvertToString();
 
                 using (var stringReader = new StringReader(data))
                 {
                     var serializer = new XmlSerializer(typeof(T));
-                    return (T)serializer.Deserialize(stringReader);
+                    return (T)serializer.Deserialize(stringReader)!;
                 }
             }
             catch (Exception ex)
             {
-                return new T();
+                throw new XmlSerializationException(
+                    $"Failed to deserialize XmlDocument to type '{typeof(T).FullName}'.",
+                    typeof(T), "Deserialize", ex);
             }
         }
-#endif
+
+        /// <inheritdoc/>
+        public Task<XmlDocument> SerializeAsync<T>(T dataObject, Func<XmlOptionsBuilder, XmlOptionsBuilder> builder, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Serialize(dataObject, builder));
+        }
+
+        /// <inheritdoc/>
+        public Task<XmlDocument> SerializeAsync<T>(T dataObject, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Serialize(dataObject));
+        }
+
+        /// <inheritdoc/>
+        public Task<T> DeserializeAsync<T>(string dataxml, CancellationToken cancellationToken = default) where T : new()
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Deserialize<T>(dataxml));
+        }
+
+        /// <inheritdoc/>
+        public Task<T> DeserializeAsync<T>(XmlDocument xmlDoc, CancellationToken cancellationToken = default) where T : new()
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Deserialize<T>(xmlDoc));
+        }
     }
 }
-
