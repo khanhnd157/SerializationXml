@@ -21,9 +21,10 @@
 
 - XML serialization and deserialization (object ↔ `XmlDocument` ↔ string ↔ file)
 - XML-to-JSON conversion with configurable options (zero external dependencies)
+- XML-to-Object mapping (`ConvertTo<T>`) — unmatched properties remain null/default
 - Fluent builder for XML output options (root element, declaration, schema, CDATA)
 - Async methods with `CancellationToken` support for all file operations
-- Extension methods on `XmlDocument` (`.ConvertToString()`, `.Builder()`, `.ToJson()`)
+- Extension methods on `XmlDocument` (`.ConvertToString()`, `.Builder()`, `.ToJson()`, `.ToObject<T>()`)
 - `IServiceCollection.AddSerializationXml()` for dependency injection
 - Custom `XmlSerializationException` with `TargetType` and `Operation` context
 - Nullable reference types enabled
@@ -99,6 +100,9 @@ var loaded = XmlConverter.FileToObject<Invoice>("invoice.xml");
 // XML → JSON
 var json = xmlDoc.ToJson();
 var json2 = XmlConverter.XmlToJson("<root><name>Test</name></root>");
+
+// XML → Typed Object (unmatched properties = null)
+var dto = XmlConverter.XmlToObject<InvoiceDto>(xmlString);
 ```
 
 ## F. Usage Guide
@@ -186,6 +190,35 @@ string json = XmlConverter.XmlToJson(xmlDoc, new XmlToJsonOptions
     IncludeNamespaces = false
 });
 ```
+
+### XML to Typed Object
+
+Map XML directly to a C# object. Properties in `T` that don't match any XML element/attribute will remain `null` (or default value).
+
+```csharp
+public class InvoiceDto
+{
+    public int? Id { get; set; }
+    public string? Customer { get; set; }
+    public decimal? Total { get; set; }
+    public string? Note { get; set; }        // not in XML → null
+    public DateTime? DueDate { get; set; }   // not in XML → null
+}
+
+// From XML string
+var dto = XmlConverter.XmlToObject<InvoiceDto>(xmlString);
+
+// From XmlDocument
+var dto = XmlConverter.XmlToObject<InvoiceDto>(xmlDocument);
+
+// From file
+var dto = XmlConverter.XmlFileToObject<InvoiceDto>("invoice.xml");
+
+// Extension method
+var dto = xmlDocument.ToObject<InvoiceDto>();
+```
+
+Supports: nested objects, collections (`List<T>`, `T[]`), all primitive types, enums, `DateTime`, `Guid`, `TimeSpan`, case-insensitive matching.
 
 ### Dependency Injection
 
@@ -298,6 +331,7 @@ The public API remains backward compatible. Only the namespace changed.
 | `ArgumentException` on `RootElement()` | The name must be a valid XML element name (no spaces, special chars) |
 | Encoding issues | Use `XmlDeclarationOptions.Encoding` to set the desired encoding (default: UTF-8) |
 | JSON output includes `?xml` | Set `OmitXmlDeclaration = true` in `XmlToJsonOptions` (default) |
+| `XmlToObject<T>` returns null properties | Properties not matching any XML element/attribute remain null — use nullable types (`int?`, `string?`) |
 
 ## K. Contributing
 
@@ -322,7 +356,7 @@ MazeNET.SerializationXml/
 │   └── Options/           # XmlOptions, XmlDeclarationOptions, XmlOptionsBuilder, XmlToJsonOptions
 ├── Infrastructure/
 │   ├── Converters/        # XmlSerializerService, XmlFileOperationsService, XmlToJsonConverterService
-│   │   └── Internal/      # XmlJsonWriter (internal JSON writer)
+│   │   └── Internal/      # XmlJsonWriter, XmlToObjectMapper
 │   └── Extensions/        # XmlExtensions, ServiceCollectionExtensions
 └── XmlConverter.cs        # Static facade
 ```

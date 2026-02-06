@@ -37,5 +37,20 @@ namespace MazeNET.SerializationXml.Core.Interfaces
         /// Convert XML file to JSON string with custom options
         /// </summary>
         string ConvertFile(string filePath, XmlToJsonOptions options);
+
+        /// <summary>
+        /// Convert XmlDocument to typed object. Unmatched properties remain null/default.
+        /// </summary>
+        T ConvertTo<T>(XmlDocument document) where T : new();
+
+        /// <summary>
+        /// Convert XML string to typed object. Unmatched properties remain null/default.
+        /// </summary>
+        T ConvertTo<T>(string xml) where T : new();
+
+        /// <summary>
+        /// Convert XML file to typed object. Unmatched properties remain null/default.
+        /// </summary>
+        T ConvertFileTo<T>(string filePath) where T : new();
     }
 }

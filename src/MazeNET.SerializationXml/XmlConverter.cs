@@ -193,5 +193,29 @@ namespace MazeNET.SerializationXml
         {
             return _jsonConverter.ConvertFile(filePath, options);
         }
+
+        /// <summary>
+        /// Convert XmlDocument to typed object. Unmatched properties remain null/default.
+        /// </summary>
+        public static T XmlToObject<T>(XmlDocument document) where T : new()
+        {
+            return _jsonConverter.ConvertTo<T>(document);
+        }
+
+        /// <summary>
+        /// Convert XML string to typed object. Unmatched properties remain null/default.
+        /// </summary>
+        public static T XmlToObject<T>(string xml) where T : new()
+        {
+            return _jsonConverter.ConvertTo<T>(xml);
+        }
+
+        /// <summary>
+        /// Convert XML file to typed object. Unmatched properties remain null/default.
+        /// </summary>
+        public static T XmlFileToObject<T>(string filePath) where T : new()
+        {
+            return _jsonConverter.ConvertFileTo<T>(filePath);
+        }
     }
 }

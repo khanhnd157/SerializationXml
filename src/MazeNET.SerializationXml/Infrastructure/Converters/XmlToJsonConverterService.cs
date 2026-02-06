@@ -5,6 +5,7 @@ using MazeNET.SerializationXml.Core.Exceptions;
 using MazeNET.SerializationXml.Core.Interfaces;
 using MazeNET.SerializationXml.Core.Options;
 using MazeNET.SerializationXml.Infrastructure.Converters.Internal;
+using XmlToObjectMapperInternal = MazeNET.SerializationXml.Infrastructure.Converters.Internal.XmlToObjectMapper;
 
 namespace MazeNET.SerializationXml.Infrastructure.Converters
 {
@@ -91,6 +92,62 @@ namespace MazeNET.SerializationXml.Infrastructure.Converters
                 throw new XmlSerializationException(
                     $"Failed to convert XML file '{filePath}' to JSON.",
                     typeof(XmlDocument), "XmlToJson", ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public T ConvertTo<T>(XmlDocument document) where T : new()
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            try
+            {
+                return XmlToObjectMapperInternal.Map<T>(document);
+            }
+            catch (Exception ex) when (ex is not ArgumentNullException)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to convert XmlDocument to type '{typeof(T).FullName}'.",
+                    typeof(T), "ConvertTo", ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public T ConvertTo<T>(string xml) where T : new()
+        {
+            if (string.IsNullOrEmpty(xml)) throw new ArgumentException("XML string cannot be null or empty.", nameof(xml));
+
+            try
+            {
+                return XmlToObjectMapperInternal.MapFromString<T>(xml);
+            }
+            catch (Exception ex) when (ex is not ArgumentException)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to convert XML string to type '{typeof(T).FullName}'.",
+                    typeof(T), "ConvertTo", ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public T ConvertFileTo<T>(string filePath) where T : new()
+        {
+            if (string.IsNullOrEmpty(filePath)) throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException("File not found: " + filePath);
+
+            try
+            {
+                var doc = new XmlDocument();
+                doc.Load(filePath);
+                return XmlToObjectMapperInternal.Map<T>(doc);
+            }
+            catch (Exception ex) when (ex is not ArgumentException && ex is not FileNotFoundException)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to convert XML file '{filePath}' to type '{typeof(T).FullName}'.",
+                    typeof(T), "ConvertFileTo", ex);
             }
         }
     }

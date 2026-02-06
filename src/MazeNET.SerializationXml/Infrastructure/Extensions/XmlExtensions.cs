@@ -125,5 +125,13 @@ namespace MazeNET.SerializationXml.Infrastructure.Extensions
         {
             return _jsonConverter.Convert(document, options);
         }
+
+        /// <summary>
+        /// Convert XmlDocument to typed object. Unmatched properties remain null/default.
+        /// </summary>
+        public static T ToObject<T>(this XmlDocument document) where T : new()
+        {
+            return _jsonConverter.ConvertTo<T>(document);
+        }
     }
 }
