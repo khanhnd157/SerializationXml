@@ -57,20 +57,21 @@ namespace MazeNET.SerializationXml.Services
         }
 
         /// <inheritdoc/>
-        public T LoadFromFile<T>(string fullPath)
+        public T LoadFromFile<T>(string fullPath, long streamingThresholdBytes = 50 * 1024 * 1024)
         {
             if (fullPath == null) throw new ArgumentNullException(nameof(fullPath));
+            if (!File.Exists(fullPath)) throw new FileNotFoundException("File not found: " + fullPath);
+
+            var fileSize = new FileInfo(fullPath).Length;
+            if (fileSize >= streamingThresholdBytes)
+                return DeserializeStream<T>(fullPath);
 
             try
             {
-                using (var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                using (var memoryStream = new MemoryStream())
+                using (var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536))
                 {
-                    stream.CopyTo(memoryStream);
-                    memoryStream.Position = 0;
-
                     var serializer = new XmlSerializer(typeof(T));
-                    return (T)serializer.Deserialize(memoryStream)!;
+                    return (T)serializer.Deserialize(stream)!;
                 }
             }
             catch (Exception ex) when (ex is not ArgumentNullException && ex is not FileNotFoundException)
@@ -91,7 +92,7 @@ namespace MazeNET.SerializationXml.Services
 
             try
             {
-                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536))
                 {
                     var xmlDoc = new XmlDocument();
                     xmlDoc.Load(stream);
@@ -166,20 +167,22 @@ namespace MazeNET.SerializationXml.Services
         }
 
         /// <inheritdoc/>
-        public async Task<T> LoadFromFileAsync<T>(string fullPath, CancellationToken cancellationToken = default)
+        public async Task<T> LoadFromFileAsync<T>(string fullPath, long streamingThresholdBytes = 50 * 1024 * 1024, CancellationToken cancellationToken = default)
         {
             if (fullPath == null) throw new ArgumentNullException(nameof(fullPath));
+            if (!File.Exists(fullPath)) throw new FileNotFoundException("File not found: " + fullPath);
+
+            var fileSize = new FileInfo(fullPath).Length;
+            if (fileSize >= streamingThresholdBytes)
+                return await DeserializeStreamAsync<T>(fullPath, cancellationToken).ConfigureAwait(false);
 
             try
             {
-                using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
-                using (var memoryStream = new MemoryStream())
+                using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true))
                 {
-                    await fileStream.CopyToAsync(memoryStream, 81920, cancellationToken).ConfigureAwait(false);
-                    memoryStream.Position = 0;
-
+                    cancellationToken.ThrowIfCancellationRequested();
                     var serializer = new XmlSerializer(typeof(T));
-                    return (T)serializer.Deserialize(memoryStream)!;
+                    return await Task.Run(() => (T)serializer.Deserialize(fileStream)!, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (Exception ex) when (ex is not ArgumentNullException && ex is not FileNotFoundException && ex is not OperationCanceledException)
@@ -200,15 +203,15 @@ namespace MazeNET.SerializationXml.Services
 
             try
             {
-                using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
-                using (var memoryStream = new MemoryStream())
+                using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true))
                 {
-                    await fileStream.CopyToAsync(memoryStream, 81920, cancellationToken).ConfigureAwait(false);
-                    memoryStream.Position = 0;
-
-                    var xmlDoc = new XmlDocument();
-                    xmlDoc.Load(memoryStream);
-                    return xmlDoc;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return await Task.Run(() =>
+                    {
+                        var xmlDoc = new XmlDocument();
+                        xmlDoc.Load(fileStream);
+                        return xmlDoc;
+                    }, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (Exception ex) when (ex is not ArgumentNullException && ex is not FileNotFoundException && ex is not OperationCanceledException)
@@ -218,5 +221,66 @@ namespace MazeNET.SerializationXml.Services
                     typeof(XmlDocument), "LoadXmlAsync", ex);
             }
         }
+
+        private static readonly XmlReaderSettings _streamReaderSettings = new XmlReaderSettings
+        {
+            IgnoreComments = true,
+            IgnoreWhitespace = true,
+            IgnoreProcessingInstructions = true,
+            CloseInput = false
+        };
+
+        /// <inheritdoc/>
+        public T DeserializeStream<T>(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+            if (!File.Exists(filePath)) throw new FileNotFoundException("File not found: " + filePath);
+
+            try
+            {
+                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536))
+                using (var reader = XmlReader.Create(stream, _streamReaderSettings))
+                {
+                    var serializer = new XmlSerializer(typeof(T));
+                    return (T)serializer.Deserialize(reader)!;
+                }
+            }
+            catch (Exception ex) when (ex is not ArgumentException && ex is not FileNotFoundException)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to stream-deserialize file '{filePath}' as type '{typeof(T).FullName}'.",
+                    typeof(T), "DeserializeStream", ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<T> DeserializeStreamAsync<T>(string filePath, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrEmpty(filePath)) throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+            if (!File.Exists(filePath)) throw new FileNotFoundException("File not found: " + filePath);
+
+            try
+            {
+                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return await Task.Run(() =>
+                    {
+                        using (var reader = XmlReader.Create(stream, _streamReaderSettings))
+                        {
+                            var serializer = new XmlSerializer(typeof(T));
+                            return (T)serializer.Deserialize(reader)!;
+                        }
+                    }, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex) when (ex is not ArgumentException && ex is not FileNotFoundException && ex is not OperationCanceledException)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to stream-deserialize file '{filePath}' as type '{typeof(T).FullName}'.",
+                    typeof(T), "DeserializeStreamAsync", ex);
+            }
+        }
+
     }
 }

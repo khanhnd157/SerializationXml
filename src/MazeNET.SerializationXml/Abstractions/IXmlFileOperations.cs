@@ -20,9 +20,9 @@ namespace MazeNET.SerializationXml.Abstractions
         bool SaveToFile<T>(string fullPath, XmlDocument document);
 
         /// <summary>
-        /// Load XML file to object
+        /// Load XML file to object. Auto-selects streaming for large files (default threshold: 50MB).
         /// </summary>
-        T LoadFromFile<T>(string fullPath);
+        T LoadFromFile<T>(string fullPath, long streamingThresholdBytes = 50 * 1024 * 1024);
 
         /// <summary>
         /// Load XML file to XmlDocument
@@ -40,13 +40,24 @@ namespace MazeNET.SerializationXml.Abstractions
         Task<bool> SaveToFileAsync<T>(string fullPath, XmlDocument document, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Load XML file to object asynchronously
+        /// Load XML file to object asynchronously. Auto-selects streaming for large files (default threshold: 50MB).
         /// </summary>
-        Task<T> LoadFromFileAsync<T>(string fullPath, CancellationToken cancellationToken = default);
+        Task<T> LoadFromFileAsync<T>(string fullPath, long streamingThresholdBytes = 50 * 1024 * 1024, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Load XML file to XmlDocument asynchronously
         /// </summary>
         Task<XmlDocument> LoadXmlAsync(string path, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Stream-deserialize large XML file to object using XmlReader (low memory)
+        /// </summary>
+        T DeserializeStream<T>(string filePath);
+
+        /// <summary>
+        /// Stream-deserialize large XML file to object using XmlReader asynchronously (low memory)
+        /// </summary>
+        Task<T> DeserializeStreamAsync<T>(string filePath, CancellationToken cancellationToken = default);
+
     }
 }
