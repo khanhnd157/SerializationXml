@@ -6,6 +6,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using MazeNET.SerializationXml.Abstractions;
 using MazeNET.SerializationXml.Exceptions;
+using MazeNET.SerializationXml.Internal;
 
 namespace MazeNET.SerializationXml.Services
 {
@@ -69,9 +70,10 @@ namespace MazeNET.SerializationXml.Services
             try
             {
                 using (var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536))
+                using (var reader = XmlReader.Create(stream, _streamReaderSettings))
                 {
                     var serializer = new XmlSerializer(typeof(T));
-                    return (T)serializer.Deserialize(stream)!;
+                    return (T)serializer.Deserialize(reader)!;
                 }
             }
             catch (Exception ex) when (ex is not ArgumentNullException && ex is not FileNotFoundException)
@@ -94,7 +96,7 @@ namespace MazeNET.SerializationXml.Services
             {
                 using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536))
                 {
-                    var xmlDoc = new XmlDocument();
+                    var xmlDoc = SafeXmlFactory.CreateDocument();
                     xmlDoc.Load(stream);
                     return xmlDoc;
                 }
@@ -181,8 +183,14 @@ namespace MazeNET.SerializationXml.Services
                 using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var serializer = new XmlSerializer(typeof(T));
-                    return await Task.Run(() => (T)serializer.Deserialize(fileStream)!, cancellationToken).ConfigureAwait(false);
+                    return await Task.Run(() =>
+                    {
+                        using (var reader = XmlReader.Create(fileStream, _streamReaderSettings))
+                        {
+                            var serializer = new XmlSerializer(typeof(T));
+                            return (T)serializer.Deserialize(reader)!;
+                        }
+                    }, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (Exception ex) when (ex is not ArgumentNullException && ex is not FileNotFoundException && ex is not OperationCanceledException)
@@ -208,7 +216,7 @@ namespace MazeNET.SerializationXml.Services
                     cancellationToken.ThrowIfCancellationRequested();
                     return await Task.Run(() =>
                     {
-                        var xmlDoc = new XmlDocument();
+                        var xmlDoc = SafeXmlFactory.CreateDocument();
                         xmlDoc.Load(fileStream);
                         return xmlDoc;
                     }, cancellationToken).ConfigureAwait(false);
@@ -224,6 +232,8 @@ namespace MazeNET.SerializationXml.Services
 
         private static readonly XmlReaderSettings _streamReaderSettings = new XmlReaderSettings
         {
+            DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null,
             IgnoreComments = true,
             IgnoreWhitespace = true,
             IgnoreProcessingInstructions = true,

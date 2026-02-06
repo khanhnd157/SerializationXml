@@ -11,6 +11,7 @@ namespace MazeNET.SerializationXml.Internal
     /// </summary>
     internal sealed class XmlJsonWriter
     {
+        private const int MaxDepth = 64;
         private readonly StringBuilder _sb;
         private readonly XmlToJsonOptions _options;
         private readonly string _indent;
@@ -98,6 +99,9 @@ namespace MazeNET.SerializationXml.Internal
 
         private void WriteElement(XmlElement element)
         {
+            if (_depth >= MaxDepth)
+                throw new System.InvalidOperationException($"Max JSON depth ({MaxDepth}) exceeded. XML nesting too deep.");
+
             var hasAttributes = HasRelevantAttributes(element);
             var childElements = GetChildElements(element);
             var textContent = GetDirectTextContent(element);

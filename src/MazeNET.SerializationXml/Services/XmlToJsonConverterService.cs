@@ -52,7 +52,7 @@ namespace MazeNET.SerializationXml.Services
 
             try
             {
-                var doc = new XmlDocument();
+                var doc = SafeXmlFactory.CreateDocument();
                 doc.LoadXml(xml);
                 return Convert(doc, options);
             }
@@ -81,7 +81,7 @@ namespace MazeNET.SerializationXml.Services
 
             try
             {
-                var doc = new XmlDocument();
+                var doc = SafeXmlFactory.CreateDocument();
                 doc.Load(filePath);
                 return Convert(doc, options);
             }
