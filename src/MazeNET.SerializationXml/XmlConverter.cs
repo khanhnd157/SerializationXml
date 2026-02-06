@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using MazeNET.SerializationXml.Core.Interfaces;
 using MazeNET.SerializationXml.Core.Options;
@@ -76,6 +78,70 @@ namespace MazeNET.SerializationXml
         public static T DeserializeObject<T>(XmlDocument xmlDoc) where T : new()
         {
             return _serializer.Deserialize<T>(xmlDoc);
+        }
+
+        /// <summary>
+        /// Save XmlDocument to file asynchronously
+        /// </summary>
+        public static Task<bool> SaveToFileAsync<T>(string fullPath, XmlDocument document, CancellationToken cancellationToken = default)
+        {
+            return _fileOps.SaveToFileAsync<T>(fullPath, document, cancellationToken);
+        }
+
+        /// <summary>
+        /// Save object to XML file asynchronously
+        /// </summary>
+        public static Task<bool> SaveToFileAsync<T>(string fullPath, T objectToSerialize, CancellationToken cancellationToken = default)
+        {
+            return _fileOps.SaveToFileAsync(fullPath, objectToSerialize, cancellationToken);
+        }
+
+        /// <summary>
+        /// Load XML file to object asynchronously
+        /// </summary>
+        public static Task<T> FileToObjectAsync<T>(string fullPath, CancellationToken cancellationToken = default)
+        {
+            return _fileOps.LoadFromFileAsync<T>(fullPath, cancellationToken);
+        }
+
+        /// <summary>
+        /// Serialize object to XmlDocument with custom options asynchronously
+        /// </summary>
+        public static Task<XmlDocument> SerializeObjectAsync<T>(T dataObject, Func<XmlOptionsBuilder, XmlOptionsBuilder> builder, CancellationToken cancellationToken = default)
+        {
+            return _serializer.SerializeAsync(dataObject, builder, cancellationToken);
+        }
+
+        /// <summary>
+        /// Serialize object to XmlDocument with default options asynchronously
+        /// </summary>
+        public static Task<XmlDocument> SerializeObjectAsync<T>(T dataObject, CancellationToken cancellationToken = default)
+        {
+            return _serializer.SerializeAsync(dataObject, cancellationToken);
+        }
+
+        /// <summary>
+        /// Load XML file to XmlDocument asynchronously
+        /// </summary>
+        public static Task<XmlDocument> LoadXmlAsync(string path, CancellationToken cancellationToken = default)
+        {
+            return _fileOps.LoadXmlAsync(path, cancellationToken);
+        }
+
+        /// <summary>
+        /// Deserialize XML string to object asynchronously
+        /// </summary>
+        public static Task<T> DeserializeObjectAsync<T>(string dataxml, CancellationToken cancellationToken = default) where T : new()
+        {
+            return _serializer.DeserializeAsync<T>(dataxml, cancellationToken);
+        }
+
+        /// <summary>
+        /// Deserialize XmlDocument to object asynchronously
+        /// </summary>
+        public static Task<T> DeserializeObjectAsync<T>(XmlDocument xmlDoc, CancellationToken cancellationToken = default) where T : new()
+        {
+            return _serializer.DeserializeAsync<T>(xmlDoc, cancellationToken);
         }
     }
 }

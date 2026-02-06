@@ -1,8 +1,11 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using MazeNET.SerializationXml.Core.Exceptions;
 using MazeNET.SerializationXml.Core.Interfaces;
 using MazeNET.SerializationXml.Core.Options;
 using MazeNET.SerializationXml.Infrastructure.Extensions;
@@ -19,19 +22,28 @@ namespace MazeNET.SerializationXml.Infrastructure.Converters
         {
             if (builder == null) throw new ArgumentNullException(nameof(builder));
 
-            using (var stringWriter = new StringWriter())
+            try
             {
-                var serializer = new XmlSerializer(typeof(T));
-                serializer.Serialize(stringWriter, dataObject);
+                using (var stringWriter = new StringWriter())
+                {
+                    var serializer = new XmlSerializer(typeof(T));
+                    serializer.Serialize(stringWriter, dataObject);
 
-                var dataSerialize = stringWriter.ToString();
+                    var dataSerialize = stringWriter.ToString();
 
-                if (string.IsNullOrEmpty(dataSerialize)) return new XmlDocument();
+                    if (string.IsNullOrEmpty(dataSerialize)) return new XmlDocument();
 
-                var xmldoc = new XmlDocument();
-                xmldoc.LoadXml(dataSerialize);
+                    var xmldoc = new XmlDocument();
+                    xmldoc.LoadXml(dataSerialize);
 
-                return xmldoc.Builder(builder);
+                    return xmldoc.Builder(builder);
+                }
+            }
+            catch (Exception ex) when (ex is not ArgumentNullException)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to serialize object of type '{typeof(T).FullName}'.",
+                    typeof(T), "Serialize", ex);
             }
         }
 
@@ -54,10 +66,19 @@ namespace MazeNET.SerializationXml.Infrastructure.Converters
             if (string.IsNullOrEmpty(dataxml))
                 return new T();
 
-            using (var stringReader = new StringReader(dataxml))
+            try
             {
-                var serializer = new XmlSerializer(typeof(T));
-                return (T)serializer.Deserialize(stringReader)!;
+                using (var stringReader = new StringReader(dataxml))
+                {
+                    var serializer = new XmlSerializer(typeof(T));
+                    return (T)serializer.Deserialize(stringReader)!;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to deserialize XML string to type '{typeof(T).FullName}'.",
+                    typeof(T), "Deserialize", ex);
             }
         }
 
@@ -67,13 +88,50 @@ namespace MazeNET.SerializationXml.Infrastructure.Converters
             if (xmlDoc == null)
                 return new T();
 
-            var data = xmlDoc.ConvertToString();
-
-            using (var stringReader = new StringReader(data))
+            try
             {
-                var serializer = new XmlSerializer(typeof(T));
-                return (T)serializer.Deserialize(stringReader)!;
+                var data = xmlDoc.ConvertToString();
+
+                using (var stringReader = new StringReader(data))
+                {
+                    var serializer = new XmlSerializer(typeof(T));
+                    return (T)serializer.Deserialize(stringReader)!;
+                }
             }
+            catch (Exception ex)
+            {
+                throw new XmlSerializationException(
+                    $"Failed to deserialize XmlDocument to type '{typeof(T).FullName}'.",
+                    typeof(T), "Deserialize", ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public Task<XmlDocument> SerializeAsync<T>(T dataObject, Func<XmlOptionsBuilder, XmlOptionsBuilder> builder, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Serialize(dataObject, builder));
+        }
+
+        /// <inheritdoc/>
+        public Task<XmlDocument> SerializeAsync<T>(T dataObject, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Serialize(dataObject));
+        }
+
+        /// <inheritdoc/>
+        public Task<T> DeserializeAsync<T>(string dataxml, CancellationToken cancellationToken = default) where T : new()
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Deserialize<T>(dataxml));
+        }
+
+        /// <inheritdoc/>
+        public Task<T> DeserializeAsync<T>(XmlDocument xmlDoc, CancellationToken cancellationToken = default) where T : new()
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(Deserialize<T>(xmlDoc));
         }
     }
 }
