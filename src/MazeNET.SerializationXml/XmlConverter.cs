@@ -36,11 +36,11 @@ namespace MazeNET.SerializationXml
         }
 
         /// <summary>
-        /// Load XML file to object
+        /// Load XML file to object. Auto-selects streaming for large files (default threshold: 50MB).
         /// </summary>
-        public static T FileToObject<T>(string fullPath)
+        public static T FileToObject<T>(string fullPath, long streamingThresholdBytes = 50 * 1024 * 1024)
         {
-            return _fileOps.LoadFromFile<T>(fullPath);
+            return _fileOps.LoadFromFile<T>(fullPath, streamingThresholdBytes);
         }
 
         /// <summary>
@@ -100,11 +100,11 @@ namespace MazeNET.SerializationXml
         }
 
         /// <summary>
-        /// Load XML file to object asynchronously
+        /// Load XML file to object asynchronously. Auto-selects streaming for large files (default threshold: 50MB).
         /// </summary>
-        public static Task<T> FileToObjectAsync<T>(string fullPath, CancellationToken cancellationToken = default)
+        public static Task<T> FileToObjectAsync<T>(string fullPath, long streamingThresholdBytes = 50 * 1024 * 1024, CancellationToken cancellationToken = default)
         {
-            return _fileOps.LoadFromFileAsync<T>(fullPath, cancellationToken);
+            return _fileOps.LoadFromFileAsync<T>(fullPath, streamingThresholdBytes, cancellationToken);
         }
 
         /// <summary>
@@ -145,6 +145,22 @@ namespace MazeNET.SerializationXml
         public static Task<T> DeserializeObjectAsync<T>(XmlDocument xmlDoc, CancellationToken cancellationToken = default) where T : new()
         {
             return _serializer.DeserializeAsync<T>(xmlDoc, cancellationToken);
+        }
+
+        /// <summary>
+        /// Stream-deserialize large XML file to object using XmlReader (low memory)
+        /// </summary>
+        public static T DeserializeStream<T>(string filePath)
+        {
+            return _fileOps.DeserializeStream<T>(filePath);
+        }
+
+        /// <summary>
+        /// Stream-deserialize large XML file to object using XmlReader asynchronously (low memory)
+        /// </summary>
+        public static Task<T> DeserializeStreamAsync<T>(string filePath, CancellationToken cancellationToken = default)
+        {
+            return _fileOps.DeserializeStreamAsync<T>(filePath, cancellationToken);
         }
 
         /// <summary>
